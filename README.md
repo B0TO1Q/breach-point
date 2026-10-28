@@ -14,7 +14,7 @@ There's no build step and nothing to install. Three.js (r128) loads from cdnjs.
 
 - **Pinned library:** Three.js loads with a Subresource Integrity hash. If the CDN ever serves a modified file, the browser refuses to run it and the page shows a load error instead.
 - **Content Security Policy:** the page may only run its own inline game script (pinned by hash) and Three.js from cdnjs, and load Google Fonts. It can't make network requests, open frames or submit forms.
-- **No data collected:** no cookies, storage, analytics or network calls. Everything runs in the browser.
+- **No data collected:** no cookies, analytics or network calls. Saved progress is stored only in your own browser (`localStorage`, key `breachpoint.save.v1`) and never leaves your device. Clearing site data or using "Reset firm record" on the briefing erases it.
 
 When you edit the inline `<script>` in `index.html`, update its `sha256-…` hash in the Content-Security-Policy meta tag, or the browser will block the game.
 
@@ -26,6 +26,9 @@ Contract KR-0417. Recover a survey engineer held at a farmhouse on the valley ro
 - **Enemy AI:** six hostiles. Quiet noises send them to investigate, gunfire sends them to hold positions, and they're stunned by breaches and flashbangs.
 - **Verbal commands:** one suspect surrenders, one fakes it with a hidden pistol, and a civilian holds a phone that looks like a pistol at a glance.
 - **After-action review:** a grade, every shot judged justified or not, the firm's account after ammo, medevac and incident penalties, and a timeline.
+- **Saved progress:** your firm record (account balance, contracts recovered, best grade and time, recent runs) is kept between visits.
+- **Checkpoints:** saved automatically when you enter the house, find the hostage and free him, and every 45 seconds. A checkpoint never saves while someone is shooting at you or can see you in a fight.
+- **Retry and restart:** pause with Esc or P to retry from the last checkpoint, restart the mission or save and quit. After a failed run, the report offers Retry from checkpoint, and the briefing shows Continue whenever a checkpoint exists. Costs from before a checkpoint are only billed once.
 
 ## Controls
 
@@ -44,7 +47,7 @@ Contract KR-0417. Recover a survey engineer held at a farmhouse on the valley ro
 | G | Flashbang |
 | V | Shout commands |
 | T / N | Weapon light / night vision |
-| Esc | Pause |
+| Esc / P | Pause: resume, retry from checkpoint, restart, save and quit |
 
 ## Roadmap
 

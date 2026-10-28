@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdnjs.cloudflare.com 'sha256-7mbbZ++omU0GMEnNYvVinpaszezQl7zTy4EpU1BlbIo='; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdnjs.cloudflare.com 'sha256-pLHxvObOJx0nPvh+s/OYY+t6lk84aFf3bl5I4K/y8KQ='; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Breach Point</title>
@@ -102,6 +102,30 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
 .notice{border:1px solid var(--amber);color:var(--amber);padding:10px 12px;font-size:14px}
 .small{font-size:13px;color:var(--phos-2)}
 .tag{font-family:var(--f-px);font-size:9px;letter-spacing:.1em;padding:2px 6px;border:1px solid currentColor}
+.btn.warn{border-color:var(--amber);color:var(--amber);background:rgba(240,180,92,.1)}
+.btn[hidden]{display:none!important}
+.linkbtn{background:none;border:0;padding:0;font:inherit;font-size:12px;color:var(--phos-2);text-decoration:underline;text-underline-offset:3px;cursor:pointer;justify-self:start}
+.linkbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.linkbtn.warn{color:var(--amber)}
+.menu{display:grid;gap:10px}
+.menu .btn{text-align:left}
+
+/* Saved progress */
+.record{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:0 0 12px}
+.record div{display:grid;gap:3px;min-width:0}
+.record dd{margin:0;font-family:var(--f-px);font-size:15px;color:var(--phos);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.record dd.neg{color:var(--alarm)}
+.runs{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:4px;font-size:13px}
+.runs li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:baseline}
+.runs .g{font-family:var(--f-px);font-size:12px;color:var(--phos)}
+.runs .g.bad{color:var(--alarm)}
+.runs .n{color:var(--phos-2);font-variant-numeric:tabular-nums}
+.runs .n.neg{color:var(--alarm)}
+.career{display:grid}
+#toast{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:calc(84px + env(safe-area-inset-top,0px));font-family:var(--f-px);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--phos);background:var(--panel);border:1px solid var(--phos-3);padding:6px 10px}
+#toast.show{animation:toastIn 2.6s ease both}
+@keyframes toastIn{0%{opacity:0;transform:translateY(-4px)}8%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+#cpInfo{font-family:var(--f-px);font-size:9px;letter-spacing:.1em;color:var(--phos-2)}
 
 /* After-action */
 .grade{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
@@ -121,7 +145,7 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
 .tl li.good span{color:var(--phos)}
 .tips p{color:var(--amber)}
 #loadErr{position:fixed;inset:auto 16px 16px;z-index:20}
-@media (prefers-reduced-motion:reduce){#fade{transition:none}}
+@media (prefers-reduced-motion:reduce){#fade{transition:none}#toast.show{animation:none}}
 </style>
 
 </head>
@@ -136,7 +160,9 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
   <div class="hud-tr panel">
     <div id="clock">00:00</div>
     <div id="compass">N · 000</div>
+    <div id="cpInfo">Not saved yet</div>
   </div>
+  <div id="toast" hidden></div>
   <div id="cross"><i class="d"></i><i class="h" id="chL"></i><i class="h" id="chR"></i><i class="v" id="chT"></i><i class="v" id="chB"></i></div>
   <div id="hitmark"></div>
   <div id="prompt"></div>
@@ -206,6 +232,24 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
         </div>
       </div>
       <div class="stack">
+        <div class="actions">
+          <button class="btn" id="continueBtn" type="button" hidden>Continue</button>
+          <button class="btn" id="startBtn" type="button">Accept contract</button>
+          <label class="chk"><input type="checkbox" id="voiceChk" checked> Spoken voice lines</label>
+        </div>
+        <p class="small">Success means the hostage reaches the exfil flare on the south road, alive. Checkpoints save when you enter the house, find the hostage and free him, and every 45 seconds while nobody is shooting at you.</p>
+        <p class="notice" id="storeNote" hidden>This browser window can't keep saved data, so your record and checkpoints will be lost when you close it. Private browsing or blocked site data usually causes this.</p>
+        <div class="panel career" id="careerPanel">
+          <h2>Firm record</h2>
+          <dl class="record">
+            <div><dt class="lbl">Account</dt><dd id="cBal">$0</dd></div>
+            <div><dt class="lbl">Recovered</dt><dd id="cRec">0 of 0</dd></div>
+            <div><dt class="lbl">Best run</dt><dd id="cBest">None yet</dd></div>
+          </dl>
+          <ol class="runs" id="cRuns"></ol>
+          <p class="small" id="cEmpty">No contracts run yet. Your record and checkpoints save in this browser.</p>
+          <button class="linkbtn" id="resetCareer" type="button">Reset firm record</button>
+        </div>
         <div class="panel">
           <h2>Kit</h2>
           <ul>
@@ -229,14 +273,9 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
             <dt><kbd>G</kbd></dt><dd>Throw flashbang</dd>
             <dt><kbd>V</kbd></dt><dd>Shout commands</dd>
             <dt><kbd>T</kbd> <kbd>N</kbd></dt><dd>Weapon light / night vision</dd>
-            <dt><kbd>Esc</kbd></dt><dd>Pause</dd>
+            <dt><kbd>Esc</kbd> <kbd>P</kbd></dt><dd>Pause, retry from checkpoint or restart</dd>
           </dl>
         </div>
-        <div class="actions">
-          <button class="btn" id="startBtn" type="button">Accept contract</button>
-          <label class="chk"><input type="checkbox" id="voiceChk" checked> Spoken voice lines</label>
-        </div>
-        <p class="small">Success means the hostage reaches the exfil flare on the south road, alive.</p>
       </div>
     </div>
   </div>
@@ -247,10 +286,13 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
     <div class="panel" style="display:grid;gap:14px">
       <h2 id="pTitle">Paused</h2>
       <p class="small" id="pauseNote">Click Resume to lock the mouse again.</p>
-      <div class="actions">
+      <div class="menu">
         <button class="btn" id="resumeBtn" type="button">Resume</button>
-        <button class="btn ghost" id="abortBtn" type="button">Abort contract</button>
+        <button class="btn ghost" id="cpBtn" type="button">Retry from checkpoint</button>
+        <button class="btn ghost" id="restartBtn" type="button">Restart mission</button>
+        <button class="btn ghost" id="quitBtn" type="button">Save and quit to briefing</button>
       </div>
+      <p class="small" id="pauseCp"></p>
     </div>
   </div>
 </section>
@@ -263,6 +305,7 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
         <h1 class="wordmark" id="aTitle" style="font-size:clamp(26px,5vw,44px)">Mission <span>report</span></h1>
       </div>
       <div class="actions">
+        <button class="btn" id="retryCpBtn" type="button" hidden>Retry from checkpoint</button>
         <button class="btn" id="againBtn" type="button">Run it again</button>
         <button class="btn ghost" id="briefBtn" type="button">Briefing</button>
       </div>
@@ -274,7 +317,7 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
         <div class="panel tips" id="aTips"><h2>Next run</h2></div>
       </div>
       <div class="stack">
-        <div class="panel"><h2>Firm account</h2><table class="tbl" id="aMoney"></table></div>
+        <div class="panel"><h2>Firm account</h2><table class="tbl" id="aMoney"></table><p class="small" id="aBal" style="margin:10px 0 0"></p></div>
         <div class="panel"><h2>Timeline</h2><ol class="tl" id="aLog"></ol></div>
       </div>
     </div>
@@ -523,7 +566,7 @@ const matCache={};
 function basic(col){ return matCache[col]||(matCache[col]=new THREE.MeshBasicMaterial({color:col})); }
 function puff(p,col,n,spd){ for(let i=0;i<n;i++){ if(fx.length>260) break; const m=new THREE.Mesh(partGeo,basic(col)); m.position.copy(p); scene.add(m); fx.push({obj:m,v:new V3((rand()-.5)*spd,rand()*spd*0.8,(rand()-.5)*spd),life:0.35+rand()*0.35,grav:true}); } }
 function tracer(a,b,col){ const g=new THREE.BufferGeometry().setFromPoints([a,b]); const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.75})); scene.add(l); fx.push({obj:l,life:0.05,dispose:true}); }
-function decal(x,z,col,s){ const m=new THREE.Mesh(new THREE.PlaneGeometry(s,s),basic(col)); m.rotation.x=-Math.PI/2; m.rotation.z=rand()*3; m.position.set(x,0.02+rand()*0.004,z); scene.add(m); decals.push(m); }
+function decal(x,z,col,s){ const m=new THREE.Mesh(new THREE.PlaneGeometry(s,s),basic(col)); m.rotation.x=-Math.PI/2; m.rotation.z=rand()*3; m.position.set(x,0.02+rand()*0.004,z); m.userData.d={x,z,col,s}; scene.add(m); decals.push(m); }
 let decals=[];
 function updateFx(dt){ for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; f.life-=dt; if(f.v){ f.obj.position.addScaledVector(f.v,dt); if(f.grav) f.v.y-=9*dt; if(f.obj.position.y<0.02){ f.obj.position.y=0.02; f.v.set(0,0,0);} } if(f.life<=0){ scene.remove(f.obj); if(f.dispose){ f.obj.geometry.dispose(); f.obj.material.dispose(); } fx.splice(i,1); } } }
 
@@ -702,7 +745,8 @@ addEventListener('keydown',e=>{
     case 'KeyT': P.light=!P.light; spot.intensity=P.light?1.7:0; SFX.click(); break;
     case 'KeyN': P.nv=!P.nv; canvas.classList.toggle('nv',P.nv); $('nvRing').hidden=!P.nv; SFX.click(); break;
     case 'KeyF': interactPress(); break;
-    case 'Escape': case 'KeyP': if(fallback) pause(); break;
+    case 'Escape': if(!locked) pause(); break;
+    case 'KeyP': pause(); try{ document.exitPointerLock(); }catch(err){} break;
   }
 });
 addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==='KeyF') P.hold=null; });
@@ -796,7 +840,7 @@ function tryFire(press){
   if(!def.auto&&!press) return;
   if(P.fireCd>0||w.reloading>0||P.busy>0||P.swapT>0||P.hold||P.sprinting) return;
   if(w.mag<=0){ SFX.click(); P.fireCd=0.25; return; }
-  w.mag--; P.fireCd=60/def.rpm; stats.rounds[P.weapon]++;
+  w.mag--; P.fireCd=60/def.rpm; stats.rounds[P.weapon]++; danger();
   const dir=new V3(); camera.getWorldDirection(dir);
   const spread=lerp(def.hip,def.ads,P.ads)*(P.moving?1.7:1)*(P.crouch?0.8:1)+P.bloom;
   dir.x+=(rand()-.5)*spread*2; dir.y+=(rand()-.5)*spread*2; dir.z+=(rand()-.5)*spread*2; dir.normalize();
@@ -847,7 +891,7 @@ function kill(ch,v){
   if(ch.armedVisible&&ch.armed){ dropWeapon(ch); }
   decal(ch.x+(rand()-.5)*0.3,ch.z+(rand()-.5)*0.3,0x3a0808,0.6);
 }
-function dropWeapon(ch){ const g=bx(ch.armed==='rifle'?0.08:0.05,0.06,ch.armed==='rifle'?0.78:0.2,lam(0x1b1b1b)); g.position.set(ch.x+0.4*Math.sin(ch.a),0.04,ch.z+0.4*Math.cos(ch.a)); g.rotation.y=ch.a+0.6; scene.add(g); dropped.push(g); if(ch.parts.gun) ch.parts.gun.visible=false; if(ch.parts.held&&ch.kind==='hostile') ch.parts.held.visible=false; }
+function dropWeapon(ch){ ch.dropped=true; const g=bx(ch.armed==='rifle'?0.08:0.05,0.06,ch.armed==='rifle'?0.78:0.2,lam(0x1b1b1b)); g.position.set(ch.x+0.4*Math.sin(ch.a),0.04,ch.z+0.4*Math.cos(ch.a)); g.rotation.y=ch.a+0.6; scene.add(g); dropped.push(g); if(ch.parts.gun) ch.parts.gun.visible=false; if(ch.parts.held&&ch.kind==='hostile') ch.parts.held.visible=false; }
 function restrain(ch){
   SFX.cuff(); const was=ch.state; ch.state='restrained'; ch.stun=0; ch.path=[]; setPose(ch,'restrained');
   const room=roomOf(ch.x,ch.z);
@@ -857,7 +901,7 @@ function restrain(ch){
 }
 function freeHostage(ch){
   SFX.cuff(); ch.state='follow'; setPose(ch,'stand'); scene.remove(hostageChair);
-  logEv('Cut the hostage free.','good'); say(ch,'Thank God. Get me out of here.'); setObjective(2);
+  logEv('Cut the hostage free.','good'); say(ch,'Thank God. Get me out of here.'); setObjective(2); cpPending='Hostage freed';
 }
 function shout(){
   if(P.shoutCd>0) return; P.shoutCd=1.5;
@@ -892,7 +936,7 @@ function updateBangs(dt){
   }
 }
 function detonate(p){
-  SFX.bang(p.x,p.z); muzzleLight.position.copy(p); muzzleLight.intensity=8; muzzleLight.distance=12;
+  SFX.bang(p.x,p.z); danger(); muzzleLight.position.copy(p); muzzleLight.intensity=8; muzzleLight.distance=12;
   pushNoise(p.x,p.z,45,'bang',true);
   let stunned=0;
   for(const ch of chars){ if(!ch.alive) continue; const d=Math.hypot(ch.x-p.x,ch.z-p.z); if(d<7&&los(p.x,p.z,ch.x,ch.z)){ ch.stun=Math.max(ch.stun,5-d*0.4); stunned++; } }
@@ -965,7 +1009,7 @@ function enemyShoot(ch){
   p=clamp(p,0.07,0.82);
   const m=ch.parts.gun&&ch.parts.gun.visible?ch.parts.gun:ch.parts.held; const mp=new V3(); if(m) m.localToWorld(mp.set(0,0,0.5)); else mp.set(ch.x,1.4,ch.z);
   const tgt=new V3(P.x+(rand()-.5)*(rand()<p?0.2:1.4),P.eye-0.3+(rand()-.5)*0.6,P.z+(rand()-.5)*(rand()<p?0.2:1.4));
-  tracer(mp,tgt,0xffb070);
+  tracer(mp,tgt,0xffb070); danger();
   SFX.shot(ch.armed==='pistol'?'pistol':'rifle',ch.x,ch.z); muzzleLight.position.copy(mp); muzzleLight.intensity=2.2;
   pushNoise(ch.x,ch.z,45,'gun',false);
   if(rand()<p) damagePlayer(ch.armed==='pistol'?15:21);
@@ -974,7 +1018,7 @@ function enemyShoot(ch){
 function damagePlayer(dmg){
   if(!P.alive) return;
   if(P.plates>0&&rand()<0.6){ dmg*=0.28; P.plates--; }
-  P.health-=dmg; stats.dmg+=dmg; P.hurtT=0.5; SFX.hurt();
+  P.health-=dmg; stats.dmg+=dmg; P.hurtT=0.5; SFX.hurt(); danger();
   if(P.health<=0){ P.health=0; P.alive=false; logEv('You were killed in action.','bad'); ending={t:1.6,outcome:'kia'}; $('fade').style.opacity=0.85; }
 }
 function playerWatching(ch){ const dx=ch.x-camera.position.x,dz=ch.z-camera.position.z,d=Math.hypot(dx,dz); if(d>8||!los(P.x,P.z,ch.x,ch.z)) return false; return Math.abs(angDiff(Math.atan2(-dx,-dz),P.yaw))<0.22; }
@@ -1047,7 +1091,7 @@ function civAI(ch,dt){
 }
 function hostageAI(ch,dt){
   const d=Math.hypot(P.x-ch.x,P.z-ch.z);
-  if(ch.state==='tied'){ if(!ch.seen&&d<6.5&&los(ch.x,ch.z,P.x,P.z)){ ch.seen=true; say(ch,'Please... get me out of here.'); if(objStage<1) setObjective(1); logEv('Found the hostage in the back room.'); } return; }
+  if(ch.state==='tied'){ if(!ch.seen&&d<6.5&&los(ch.x,ch.z,P.x,P.z)){ ch.seen=true; say(ch,'Please... get me out of here.'); if(objStage<1) setObjective(1); logEv('Found the hostage in the back room.'); cpPending='Hostage located'; } return; }
   if(ch.state==='follow'){
     ch.repath=(ch.repath||0)-dt;
     if(d>1.6){ if(ch.repath<=0||!ch.path.length){ ch.path=pathTo(ch.x,ch.z,P.x,P.z); ch.repath=0.5; } ch.speed=d>4?3.6:2.6; moveAlong(ch,dt); setPose(ch,'stand'); }
@@ -1070,6 +1114,7 @@ function updateHud(dt){
   $('cross').style.opacity=P.ads>0.6?0:1;
   if(hudT>0) return; hudT=0.1;
   $('clock').textContent=fmtT(missionT);
+  $('cpInfo').textContent=lastCpLabel?`Saved ${fmtT(lastCp)}`:'Not saved yet';
   const hd=((360-(P.yaw*180/Math.PI))%360+360)%360; const dirs=['N','NE','E','SE','S','SW','W','NW']; $('compass').textContent=dirs[Math.round(hd/45)%8]+' · '+String(Math.round(hd)%360).padStart(3,'0');
   $('hpVal').textContent=Math.ceil(P.health); const hb=$('hpBar'); hb.style.width=P.health+'%'; hb.classList.toggle('low',P.health<35);
   platesEl.innerHTML=''; for(let i=0;i<5;i++){ const e=document.createElement('i'); if(i>=P.plates) e.className='gone'; platesEl.appendChild(e); }
@@ -1160,6 +1205,7 @@ function frame(now){
     updatePlayer(dt);
     for(const ch of chars) updateChar(ch,dt);
     updateBangs(dt);
+    updateCheckpoint();
     updateHud(dt);
     if(ending){ ending.t-=dt; if(ending.t<=0){ const o=ending.outcome; ending=null; finish(o); } }
   } else if(state==='brief'||state==='aar'){
@@ -1174,30 +1220,195 @@ function frame(now){
   if(state==='play'||state==='pause'){ renderer.clearDepth(); renderer.render(vmScene,vmCam); }
 }
 
+/* ================= SAVE ================= */
+// Progress lives in this browser only: the firm record and one mid-mission checkpoint.
+const SAVE_KEY='breachpoint.save.v1', BUILD='m1';
+let save=null, storageOk=true;
+function blankSave(){ return {v:1,settings:{voice:true},firm:{balance:0,runs:0,recovered:0,bestGrade:null,bestScore:-1,bestTime:null},history:[],checkpoint:null}; }
+function loadSave(){
+  save=blankSave();
+  try{
+    const raw=localStorage.getItem(SAVE_KEY); if(!raw) return;
+    const d=JSON.parse(raw); if(!d||d.v!==1) return;
+    Object.assign(save.firm,d.firm||{}); Object.assign(save.settings,d.settings||{});
+    if(Array.isArray(d.history)) save.history=d.history.slice(0,8);
+    if(d.checkpoint&&d.checkpoint.build===BUILD) save.checkpoint=d.checkpoint;
+  }catch(e){ storageOk=false; }
+}
+function writeSave(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); storageOk=true; return true; }catch(e){ storageOk=false; return false; } }
+const money=n=>(n<0?'−':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US');
+function costParts(st){ return {ammo:st.rounds.carbine*WEAP.carbine.cost+st.rounds.pistol*WEAP.pistol.cost+st.shells*8+st.bangs*45, inc:st.unjust*12000}; }
+
+/* checkpoints */
+let lastDanger=0, lastCp=0, lastCpLabel='', cpPending=null, enteredHouse=false, usedCp=false, billed={ammo:0,inc:0};
+function danger(){ lastDanger=missionT; }
+function stageLabel(){ if(objStage===2) return 'Escorting the hostage'; if(objStage===1) return 'Hostage located'; return enteredHouse?'Inside the farmhouse':'Approaching the farmhouse'; }
+function safeToSave(){
+  if(state!=='play'||!P.alive||ending) return false;
+  if(missionT-lastDanger<4||bangs.length||P.hold) return false;
+  if(P.W[P.weapon].reloading>0) return false;
+  return !chars.some(c=>c.alive&&c.kind==='hostile'&&c.state==='engage'&&c.sees);
+}
+function takeCheckpoint(label){
+  save.checkpoint=snapshot(label); lastCp=missionT; lastCpLabel=label; cpPending=null;
+  return writeSave();
+}
+function updateCheckpoint(){
+  if(!enteredHouse&&insideHouse(P.x,P.z)){ enteredHouse=true; cpPending='Inside the farmhouse'; }
+  const label=cpPending||(missionT-lastCp>45?stageLabel():null);
+  if(!label||!safeToSave()) return;
+  const ok=takeCheckpoint(label);
+  toast(ok?`Checkpoint saved · ${label}`:'Checkpoint could not be saved');
+}
+function toast(t){ const el=$('toast'); el.textContent=t; el.hidden=false; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>{ el.hidden=true; },2600); }
+const clone=o=>JSON.parse(JSON.stringify(o));
+function snapshot(label){
+  return {build:BUILD,label,at:Date.now(),missionT,alarm,objStage,enteredHouse,billed:clone(billed),
+    P:{x:P.x,z:P.z,yaw:P.yaw,pitch:P.pitch,crouch:P.crouch,health:P.health,plates:P.plates,weapon:P.weapon,shells:P.shells,bangs:P.bangs,light:P.light,nv:P.nv,W:clone(P.W)},
+    chars:chars.map(c=>({id:c.id,x:c.x,z:c.z,a:c.a,hp:c.hp,alive:c.alive,state:c.state,armedVisible:c.armedVisible,spot:c.spot,pi:c.pi,said:c.said,logged:c.logged,hits:c.hits,seen:!!c.seen,fakeT:c.fakeT,last:c.last||null,look:c.look||null,lost:c.lost,wait:c.wait,dropped:!!c.dropped})),
+    doors:[...doorMap.values()].map(d=>({c:d.c,r:d.r,open:d.open,locked:d.locked,target:d.target,breached:d.breached,tilt:d.tilt})),
+    decals:decals.map(m=>m.userData.d),
+    stats:clone(stats),log:clone(logList)};
+}
+function poseFor(ch){
+  if(ch.kind==='hostage') return ch.state==='tied'?'tied':'stand';
+  if(ch.kind==='civilian') return ch.state==='calm'?'phone':ch.state==='cower'?'cower':ch.state==='restrained'?'restrained':'kneelUp';
+  switch(ch.state){ case 'restrained': return 'restrained'; case 'surrendered': case 'fake': return 'kneelUp'; case 'engage': case 'alert': return 'aim'; case 'investigate': return alarm?'aim':'low'; default: return 'low'; }
+}
+function applySnapshot(src){
+  const s=clone(src);
+  missionT=s.missionT; alarm=s.alarm; enteredHouse=s.enteredHouse; setObjective(s.objStage);
+  billed=s.billed||{ammo:0,inc:0};
+  const p=s.P; Object.assign(P,{x:p.x,z:p.z,yaw:p.yaw,pitch:p.pitch,crouch:p.crouch,health:p.health,plates:p.plates,weapon:p.weapon,shells:p.shells,bangs:p.bangs,light:p.light,nv:p.nv,W:p.W});
+  for(const k in P.W) P.W[k].reloading=0;
+  vm.carbine.visible=P.weapon==='carbine'; vm.pistol.visible=P.weapon==='pistol';
+  spot.intensity=P.light?1.7:0; canvas.classList.toggle('nv',P.nv); $('nvRing').hidden=!P.nv;
+  stats=s.stats; logList=s.log;
+  for(const sd of s.doors){ const d=doorAt(sd.c,sd.r); if(!d) continue; Object.assign(d,{open:sd.open,locked:sd.locked,target:sd.target,angle:sd.target,breached:sd.breached,tilt:sd.tilt}); d.pivot.rotation.y=d.angle; d.panel.rotation.z=d.tilt; }
+  for(const dd of s.decals) decal(dd.x,dd.z,dd.col,dd.s);
+  for(const sc of s.chars){
+    const ch=chars.find(c=>c.id===sc.id); if(!ch) continue;
+    Object.assign(ch,{x:sc.x,z:sc.z,a:sc.a,hp:sc.hp,alive:sc.alive,state:sc.state,armedVisible:sc.armedVisible,spot:sc.spot,pi:sc.pi,said:sc.said||{},logged:sc.logged,hits:sc.hits,seen:sc.seen,fakeT:sc.fakeT,last:sc.last,look:sc.look,lost:sc.lost||0,wait:sc.wait||0});
+    ch.path=[]; ch.stun=0; ch.react=0; ch.hunting=false; ch.pose='';
+    if(ch.kind==='hostage'&&ch.state!=='tied'&&hostageChair) scene.remove(hostageChair);
+    if(!ch.alive){
+      ch.deathT=1; setPose(ch,'low'); ch.parts.root.rotation.x=-Math.PI/2; ch.parts.root.position.y=0.12;
+      if(sc.dropped) dropWeapon(ch);
+      if(ch.parts.gun) ch.parts.gun.visible=false; if(ch.parts.held&&ch.kind==='hostile') ch.parts.held.visible=false;
+      place(ch); ch.parts.root.position.set(ch.x,0.12,ch.z); continue;
+    }
+    setPose(ch,poseFor(ch));
+    if(sc.dropped) dropWeapon(ch);
+    if(ch.state==='alert'&&ch.hold&&Math.hypot(ch.x-ch.hold.x,ch.z-ch.hold.z)>0.3) ch.path=pathTo(ch.x,ch.z,ch.hold.x,ch.hold.z);
+    place(ch);
+  }
+  lastCp=missionT; lastCpLabel=s.label; lastDanger=missionT; cpPending=null;
+  logEv(`Resumed from checkpoint: ${s.label.toLowerCase()}.`);
+}
+
 /* ================= FLOW ================= */
 function resetMission(){
   resetDoors(); spawnAll(); resetPlayer(); resetStats();
   missionT=0; alarm=false; ending=null; bangs.forEach(b=>scene.remove(b.m)); bangs=[];
+  lastDanger=0; lastCp=0; lastCpLabel=''; cpPending=null; enteredHouse=false; usedCp=false; billed={ammo:0,inc:0};
   setObjective(0); vm.carbine.visible=true; vm.pistol.visible=false; spot.intensity=0; canvas.classList.remove('nv'); $('nvRing').hidden=true;
-  $('fade').style.opacity=0; $('flashOv').style.opacity=0; subsEl.innerHTML='';
+  $('fade').style.opacity=0; $('flashOv').style.opacity=0; $('vignette').style.opacity=0; subsEl.innerHTML=''; $('toast').hidden=true;
   camera.fov=75; camera.updateProjectionMatrix();
   logEv('Stepped off at the south road. Contract clock started.');
 }
-function startMission(){
-  audioInit(); voiceOn=$('voiceChk').checked; resetMission();
+function startMission(cp){
+  audioInit(); voiceOn=$('voiceChk').checked;
+  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){}
+  resetMission();
+  if(cp){ applySnapshot(cp); usedCp=true; }
+  else { save.checkpoint=null; writeSave(); }
   state='play'; $('brief').hidden=true; $('aar').hidden=true; $('pause').hidden=true; $('hud').hidden=false;
+  if(cp) toast(`Resumed · ${cp.label}`);
   requestLock();
 }
 function requestLock(){ try{ const p=canvas.requestPointerLock(); if(p&&p.catch) p.catch(()=>{ fallback=true; }); }catch(e){ fallback=true; } }
 document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===canvas; if(locked){ fallback=false; } else if(state==='play'&&!fallback){ pause(); } });
-document.addEventListener('pointerlockerror',()=>{ fallback=true; $('pauseNote').textContent='Mouse lock is not available here. Look by moving the mouse or using the arrow keys; press Esc or P to pause.'; });
-function pause(){ if(state!=='play') return; state='pause'; $('pause').hidden=false; for(const k in keys) keys[k]=false; lmb=rmb=false; P.hold=null; }
+document.addEventListener('pointerlockerror',()=>{ fallback=true; $('pauseNote').textContent='Mouse lock is not available here. Look by moving the mouse or using the arrow keys. Press Esc or P to pause.'; });
+function pause(){
+  if(state!=='play') return; state='pause'; $('pause').hidden=false; for(const k in keys) keys[k]=false; lmb=rmb=false; P.hold=null;
+  const cp=save.checkpoint; $('cpBtn').hidden=!cp;
+  $('pauseCp').textContent=cp?`Last checkpoint: ${cp.label}, at ${fmtT(cp.missionT)}.`:'No checkpoint yet this run. One saves when you enter the house.';
+  disarm($('restartBtn'),'Restart mission');
+}
 function resume(){ state='play'; $('pause').hidden=true; audioInit(); requestLock(); }
-$('startBtn').addEventListener('click',startMission);
+function showBrief(){
+  state='brief'; try{ document.exitPointerLock(); }catch(e){}
+  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){}
+  $('hud').hidden=true; $('pause').hidden=true; $('aar').hidden=true; $('brief').hidden=false;
+  canvas.classList.remove('nv'); $('nvRing').hidden=true; $('vignette').style.opacity=0; $('flashOv').style.opacity=0; $('fade').style.opacity=0;
+  renderCareer(); $('brief').scrollTop=0;
+}
+function quitToBrief(){
+  // Called from the pause menu: state is 'pause', so check safety as if playing.
+  state='play'; const ok=safeToSave(); state='pause';
+  if(ok) takeCheckpoint(stageLabel());
+  showBrief();
+}
+function disarm(btn,label){ btn.dataset.armed=''; btn.classList.remove('warn'); btn.textContent=label; clearTimeout(btn._t); }
+function confirmClick(btn,label,ask,action){
+  if(btn.dataset.armed==='1'){ disarm(btn,label); action(); return; }
+  btn.dataset.armed='1'; btn.classList.add('warn'); btn.textContent=ask;
+  clearTimeout(btn._t); btn._t=setTimeout(()=>disarm(btn,label),4000);
+}
+const OUTSHORT={success:'Recovered',kia:'Killed in action',hostage:'Hostage killed'};
+function renderCareer(){
+  const f=save.firm;
+  const bal=$('cBal'); bal.textContent=money(f.balance); bal.classList.toggle('neg',f.balance<0);
+  $('cRec').textContent=`${f.recovered} of ${f.runs}`;
+  $('cBest').textContent=f.bestGrade?`${f.bestGrade} · ${fmtT(f.bestTime)}`:'None yet';
+  const ol=$('cRuns'); ol.innerHTML='';
+  save.history.slice(0,5).forEach(h=>{
+    const li=document.createElement('li');
+    const g=document.createElement('span'); g.className='g'+(h.grade==='F'?' bad':''); g.textContent=h.grade;
+    const t=document.createElement('span'); t.textContent=`${OUTSHORT[h.outcome]||h.outcome} · ${fmtT(h.time)}${h.cp?' · from checkpoint':''}`;
+    const n=document.createElement('span'); n.className='n'+(h.net<0?' neg':''); n.textContent=money(h.net);
+    li.append(g,t,n); ol.appendChild(li);
+  });
+  $('cEmpty').hidden=save.history.length>0;
+  const cp=save.checkpoint, cb=$('continueBtn');
+  cb.hidden=!cp; if(cp) cb.textContent=`Continue · ${cp.label} · ${fmtT(cp.missionT)}`;
+  const sb=$('startBtn'); disarm(sb,cp?'Start over':'Accept contract'); sb.classList.toggle('ghost',!!cp);
+  disarm($('resetCareer'),'Reset firm record');
+  $('storeNote').hidden=storageOk;
+}
+function recordRun(outcome,letter,score,net){
+  const f=save.firm; f.runs++; f.balance+=net;
+  if(outcome==='success'){
+    f.recovered++;
+    if(score>f.bestScore){ f.bestScore=score; f.bestGrade=letter; }
+    if(f.bestTime===null||missionT<f.bestTime) f.bestTime=missionT;
+    save.checkpoint=null;
+  } else if(save.checkpoint){
+    // This failed run has already paid for everything up to the checkpoint.
+    save.checkpoint.billed=costParts(save.checkpoint.stats);
+  }
+  save.history.unshift({at:Date.now(),outcome,grade:letter,time:Math.round(missionT),net:Math.round(net),cp:usedCp});
+  save.history=save.history.slice(0,8);
+  writeSave();
+}
+
+$('continueBtn').addEventListener('click',()=>{ if(save.checkpoint) startMission(save.checkpoint); });
+$('startBtn').addEventListener('click',()=>{
+  const b=$('startBtn');
+  if(save.checkpoint) confirmClick(b,'Start over','Discard checkpoint and start over?',()=>startMission(null));
+  else startMission(null);
+});
+$('resetCareer').addEventListener('click',()=>confirmClick($('resetCareer'),'Reset firm record','Click again to erase your record and checkpoint',()=>{
+  save=Object.assign(blankSave(),{settings:save.settings}); writeSave(); renderCareer();
+}));
+$('voiceChk').addEventListener('change',()=>{ save.settings.voice=$('voiceChk').checked; voiceOn=save.settings.voice; writeSave(); });
 $('resumeBtn').addEventListener('click',resume);
-$('abortBtn').addEventListener('click',()=>{ logEv('Contract aborted.','bad'); finish('abort'); });
-$('againBtn').addEventListener('click',startMission);
-$('briefBtn').addEventListener('click',()=>{ $('aar').hidden=true; $('brief').hidden=false; state='brief'; });
+$('cpBtn').addEventListener('click',()=>{ if(save.checkpoint) startMission(save.checkpoint); });
+$('restartBtn').addEventListener('click',()=>confirmClick($('restartBtn'),'Restart mission','Restart from the beginning?',()=>startMission(null)));
+$('quitBtn').addEventListener('click',quitToBrief);
+$('retryCpBtn').addEventListener('click',()=>{ if(save.checkpoint) startMission(save.checkpoint); });
+$('againBtn').addEventListener('click',()=>startMission(null));
+$('briefBtn').addEventListener('click',showBrief);
 if(matchMedia('(hover: none) and (pointer: coarse)').matches) $('touchNote').hidden=false;
 
 function finish(outcome){
@@ -1215,17 +1426,16 @@ function finish(outcome){
   let letter=score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F';
   if(!success) letter='F';
   const ge=$('aGrade'); ge.textContent=letter; ge.className='letter '+(letter==='F'?'bad':letter==='A'||letter==='B'?'':'mid');
-  const OUT={success:'Hostage recovered alive',kia:'Operator killed in action',hostage:'Hostage killed',abort:'Contract aborted'};
+  const OUT={success:'Hostage recovered alive',kia:'Operator killed in action',hostage:'Hostage killed'};
   $('aOutcome').textContent=OUT[outcome];
-  $('aSub').textContent=`Time on target ${fmtT(missionT)} · conduct score ${score}/100`;
-  const ammo=stats.rounds.carbine*WEAP.carbine.cost+stats.rounds.pistol*WEAP.pistol.cost+stats.shells*8+stats.bangs*45;
+  $('aSub').textContent=`Time on target ${fmtT(missionT)} · conduct score ${score}/100${usedCp?' · resumed from a checkpoint':''}`;
+  const parts=costParts(stats);
+  const ammo=Math.max(0,parts.ammo-billed.ammo), incidents=Math.max(0,parts.inc-billed.inc);
   const medevac=P.health<40?6500:0;
-  const incidents=stats.unjust*12000;
   const pay=success?48000:0;
   const net=pay-ammo-medevac-incidents;
-  const money=[['Contract pay',pay,false],['Ammunition and munitions',-ammo,true],['Medevac',-medevac,true],['Incident penalties',-incidents,true]];
-  const fm=n=>(n<0?'−':'')+'$'+Math.abs(Math.round(n)).toLocaleString('en-US');
-  $('aMoney').innerHTML=money.map(([l,v,neg])=>`<tr class="${neg&&v<0?'neg':''}"><td>${l}</td><td>${fm(v)}</td></tr>`).join('')+`<tr class="total ${net<0?'neg':''}"><td>Firm net</td><td>${fm(net)}</td></tr>`;
+  const rows=[['Contract pay',pay],['Ammunition and munitions',-ammo],['Medevac',-medevac],['Incident penalties',-incidents]];
+  $('aMoney').innerHTML=rows.map(([l,v])=>`<tr class="${v<0?'neg':''}"><td>${l}</td><td>${money(v)}</td></tr>`).join('')+`<tr class="total ${net<0?'neg':''}"><td>Firm net</td><td>${money(net)}</td></tr>`;
   const force=[['Rounds fired',rounds],['Hits',stats.hits],['Suspects killed',stats.kills],['Suspects detained',stats.detained],['Surrenders after commands',stats.shoutsWorked],['Unjustified hits',stats.unjust],['Civilians harmed',stats.civHurt],['Hostage',hostage&&hostage.alive?(hostage.state==='follow'?'Freed':'Still held'):'Killed'],['Damage taken',Math.round(stats.dmg)]];
   $('aForce').innerHTML=force.map(([l,v])=>`<tr class="${(l==='Unjustified hits'||l==='Civilians harmed')&&v>0||(l==='Hostage'&&v==='Killed')?'neg':''}"><td>${l}</td><td>${v}</td></tr>`).join('');
   const tips=[];
@@ -1237,10 +1447,18 @@ function finish(outcome){
   $('aTips').innerHTML='<h2>Next run</h2>'+tips.slice(0,3).map(t=>`<p>${t}</p>`).join('');
   $('aLog').innerHTML=logList.map(e=>`<li class="${e.tone}"><time>${fmtT(e.t)}</time><span></span></li>`).join('');
   [...$('aLog').querySelectorAll('span')].forEach((s,i)=>s.textContent=logList[i].text);
+  recordRun(outcome,letter,score,net);
+  $('aBal').textContent=usedCp&&(billed.ammo||billed.inc)?`Costs from before the checkpoint were billed on the earlier attempt. Firm account now ${money(save.firm.balance)}.`:`Firm account now ${money(save.firm.balance)}.`;
+  const cp=save.checkpoint, failedWithCp=!success&&!!cp;
+  const rb=$('retryCpBtn'); rb.hidden=!failedWithCp; if(failedWithCp) rb.textContent=`Retry from checkpoint · ${cp.label}`;
+  const ag=$('againBtn'); ag.textContent=success?'Run it again':'Restart mission'; ag.classList.toggle('ghost',failedWithCp);
   $('aar').hidden=false; $('aar').scrollTop=0;
 }
 
+loadSave();
+$('voiceChk').checked=!!save.settings.voice; voiceOn=!!save.settings.voice;
 resetDoors(); spawnAll(); resetPlayer(); resetStats();
+renderCareer();
 requestAnimationFrame(frame);
 })();
 </script>
