@@ -12,7 +12,7 @@ There's no build step and nothing to install. Three.js (r128) loads from cdnjs.
 
 ## Campaign
 
-Levels unlock in order. Each one has a two-sentence brief, and after the mission the report says what really happened.
+Levels unlock in order. Each one has a two-sentence brief and 2–3 plans to choose from, and after the mission the report says what really happened.
 
 | # | Year | Level | You are | Objective |
 | --- | --- | --- | --- | --- |
@@ -34,6 +34,16 @@ The levels are simplified to one floor and a handful of people. Real people appe
 - **Secure:** arrest or neutralize every hostile. Hostages are seated among them. After an alarm, gunmen near the hostages start killing them, so speed matters.
 - **Rescue:** find the tied hostages, cut them free and walk them to the green flare.
 - **Talk out (Ruby Ridge):** stay outside and call the occupants out. Gunfire, breaching or walking in turns it violent, and any death fails the level.
+
+## Your team
+
+You lead a five-man team: you plus four AI operators.
+
+- **Plans:** before each level, pick how the team goes in: one stack behind you, a second team at another door, simultaneous multi-door breaches, tunnels, overwatch or a perimeter. Each plan card shows who goes where.
+- **The go signal:** teams stack at their doors and wait. Press **X** and every team breaches at once. If the team is spotted or shooting starts, the stacks go in on their own. Press **Z** to call everyone back to you.
+- **How operators fight:** they stay quiet until the team is compromised, give commands before firing, shoot only armed threats, cuff people who surrender, and shotgun any locked door in their way. They can be wounded.
+- **Keeping hostages alive:** after an alarm, gunmen near the hostages start killing them, but a gunman can't execute anyone while an operator has eyes on him. Plans that send a team straight to the hostage rooms, launched together with X, are how you get everyone out.
+- **Friendly fire** counts as an unjustified hit.
 
 ## Features
 
@@ -60,6 +70,8 @@ The levels are simplified to one floor and a handful of people. Real people appe
 | H | Shotgun breach |
 | G | Flashbang |
 | V | Shout commands |
+| X | Send the teams (simultaneous breach) |
+| Z | Regroup on me |
 | T / N | Weapon light / night vision |
 | Esc / P | Pause: resume, retry from checkpoint, restart, save and quit |
 
@@ -75,7 +87,7 @@ When you edit the inline `<script>` in `index.html`, update its `sha256-…` has
 
 1. Multi-floor buildings with stairs (the embassy, the residence)
 2. Era-appropriate weapons per level
-3. AI squad orders: stack, breach and clear together
+3. More squad orders: hold a room, follow a different leader, cover a hallway
 4. More levels and a contractor mode
 
 Design doc: https://claude.ai/artifact/Daj7Z1uaVygSQjUw2p4R6d

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdnjs.cloudflare.com 'sha256-YhE54tf301Esc2cX9Nics3Ykt67gGm+ssBNd5P8V/eY='; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdnjs.cloudflare.com 'sha256-V0EsD8ha5M2RThXg+erY8BiruuCRezjG7KhJ61x63dc='; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Breach Point</title>
@@ -111,6 +111,14 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
 .mini div{display:grid;gap:2px}
 .mini dd{margin:0;font-family:var(--f-px);font-size:11px;color:var(--phos);font-variant-numeric:tabular-nums}
 .loadout{display:grid;gap:10px;align-content:start}
+.plans{display:grid;gap:6px}
+.plan{display:grid;gap:3px;text-align:left;background:transparent;border:1px solid var(--phos-3);color:var(--paper);padding:8px 10px;cursor:pointer;font:inherit}
+.plan:hover{border-color:var(--phos-2)}
+.plan[aria-pressed="true"]{border-color:var(--phos);background:rgba(142,245,162,.09)}
+.plan .pn{font-family:var(--f-px);font-size:11px;letter-spacing:.04em;color:var(--phos)}
+.plan .pd{font-size:13px;color:var(--paper);line-height:1.35}
+.plan .pt{font-family:var(--f-px);font-size:9px;letter-spacing:.1em;color:var(--phos-2);text-transform:uppercase}
+#teamText{margin-top:8px;font-family:var(--f-px);font-size:9px;letter-spacing:.08em;line-height:1.7;color:var(--phos-2);text-transform:uppercase;white-space:pre-line}
 .picks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .pick{display:grid;gap:6px;text-align:left;background:transparent;border:1px solid var(--phos-3);color:var(--paper);padding:9px 10px;cursor:pointer;font:inherit}
 .pick:hover{border-color:var(--phos-2)}
@@ -124,7 +132,7 @@ kbd{font-family:var(--f-px);font-size:10px;letter-spacing:.06em;color:var(--nigh
 .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .btn{font-family:var(--f-px);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--phos);background:rgba(142,245,162,.08);border:1px solid var(--phos);padding:12px 18px;cursor:pointer}
 .btn:hover{background:rgba(142,245,162,.18)}
-.btn:focus-visible,.level:focus-visible,.pick:focus-visible,.chk input:focus-visible,summary:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btn:focus-visible,.level:focus-visible,.pick:focus-visible,.plan:focus-visible,.chk input:focus-visible,summary:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .btn.ghost{border-color:var(--phos-3);color:var(--phos-2);background:transparent}
 .btn.warn{border-color:var(--amber);color:var(--amber);background:rgba(240,180,92,.1)}
 .btn[hidden]{display:none!important}
@@ -173,6 +181,7 @@ details.fold[open] summary::before{content:"− "}
   <div class="hud-tl panel">
     <div class="lbl" id="hudLevel"></div>
     <div id="objText"></div>
+    <div id="teamText"></div>
   </div>
   <div class="hud-tr panel">
     <div id="clock">00:00</div>
@@ -225,6 +234,8 @@ details.fold[open] summary::before{content:"− "}
           <div><dt class="lbl">Objective</dt><dd id="bGoal"></dd></div>
           <div><dt class="lbl">Best</dt><dd id="bBest"></dd></div>
         </dl>
+        <div class="lbl">Plan</div>
+        <div class="plans" id="plans"></div>
       </div>
       <div class="panel loadout">
         <div class="lbl">Primary</div>
@@ -247,7 +258,7 @@ details.fold[open] summary::before{content:"− "}
           <div><kbd>Mouse</kbd> Look, fire, aim</div><div><kbd>Q</kbd><kbd>E</kbd> Lean</div><div><kbd>R</kbd> Reload</div>
           <div><kbd>1</kbd><kbd>2</kbd> Primary / sidearm</div><div><kbd>F</kbd> Use, pick, cuff, free</div><div><kbd>B</kbd> Kick door</div>
           <div><kbd>H</kbd> Shotgun breach</div><div><kbd>G</kbd> Flashbang</div><div><kbd>V</kbd> Shout commands</div>
-          <div><kbd>T</kbd> Light</div><div><kbd>N</kbd> Night vision</div><div><kbd>Esc</kbd> Pause</div>
+          <div><kbd>X</kbd> Send the teams</div><div><kbd>Z</kbd> Regroup on me</div><div><kbd>T</kbd> Light</div><div><kbd>N</kbd> Night vision</div><div><kbd>Esc</kbd> Pause</div>
         </div>
       </details>
       <button class="linkbtn" id="resetCareer" type="button">Reset progress</button>
@@ -330,7 +341,8 @@ const LOOKS={
   c4:{shirt:0x5a6a7a,pants:0x2f3540,skin:2,hat:'none',hair:0x2a1c12},
   c5:{shirt:0xa89a7a,pants:0x4a4a45,skin:1,hat:'none',hair:0x111111},
   c6:{shirt:0x2a4a6a,pants:0x2a2a2e,skin:3,hat:'none',hair:0x111111},
-  soldier:{shirt:0x5a6a3a,pants:0x5a6a3a,skin:0,hat:'none',hair:0x3a2a1a}
+  soldier:{shirt:0x5a6a3a,pants:0x5a6a3a,skin:0,hat:'none',hair:0x3a2a1a},
+  operator:{shirt:0x55553f,pants:0x48483a,skin:2,hat:'helmet',hatCol:0x3a3c34,rig:0x2a2e24}
 };
 const H=(id,ai,at,o)=>Object.assign({id,label:'Hostile',kind:'hostile',ai,armed:'rifle',at},o);
 const C=(id,at,look,o)=>Object.assign({id,label:'Hostage',kind:'civilian',captive:true,at,look,face:[at[0]+1,at[1]]},o);
@@ -347,7 +359,8 @@ const HUT_W=["######","#....#","D....w","#....#","###w##"];
 const HUT_N=["##D###","#....#","w....#","#....#","######"];
 const LEVELS=[
 {
-  id:'1973-stockholm', year:1973, name:'Norrmalmstorg Bank', when:'August 1973 · Stockholm, Sweden', unit:'Swedish police', where:'bank',
+  id:'1973-stockholm',
+  plans:[{name:'One stack, front door',desc:'All five of you go in through the front.',follow:4},{name:'Front and staff door',desc:'Red shotguns the staff door and goes for the vault while you take the front.',follow:2,els:[{name:'Red',n:2,door:'0:3,19',to:['vault'],method:'shotgun'}]},{name:'Quiet staff door',desc:'Start in the east alley, pick the staff door and creep in. The team follows you.',follow:4,start:{x:26.5,z:13.5,yaw:0}}], year:1973, name:'Norrmalmstorg Bank', when:'August 1973 · Stockholm, Sweden', unit:'Swedish police', where:'bank',
   type:'clear', enemy:'robbers', goal:'Secure the bank',
   brief:'Two armed robbers are holding four bank employees in the vault of Kreditbanken. Get everyone out alive.',
   history:'The real siege lasted six days. Police drilled into the vault, used tear gas, and nobody died. The hostages\' sympathy for their captors gave the world the term "Stockholm syndrome".',
@@ -382,7 +395,8 @@ const LEVELS=[
   tips:['Shout first. One of the robbers gives up when he hears commands.','The vault door is reinforced. A shotgun breach is faster than picking it.']
 },
 {
-  id:'1975-london', year:1975, name:'Balcombe Street', when:'December 1975 · London, UK', unit:'Metropolitan Police', where:'flat',
+  id:'1975-london',
+  plans:[{name:'One stack, front door',desc:'Kick the front door and flood the hall together.',follow:4},{name:'You pick, they wait',desc:'Pick the lock alone. Red stacks outside until you press X.',follow:0,els:[{name:'Red',n:4,door:'0:9,5',to:['living room','bedroom']}]}], year:1975, name:'Balcombe Street', when:'December 1975 · London, UK', unit:'Metropolitan Police', where:'flat',
   type:'clear', enemy:'gunmen', goal:'Secure the flat',
   brief:'Four IRA gunmen on the run from police have barricaded themselves in a Marylebone flat with the couple who live there. Bring it to a safe end.',
   history:'The real siege lasted six days. Police cut off food and power and talked continuously. The gunmen surrendered and the couple walked out unharmed.',
@@ -417,7 +431,8 @@ const LEVELS=[
   tips:['Three of the four will give up if you give clear commands. Shout before you shoot.','The gunman in the hall raises his hands but keeps a pistol. Cuff him fast.']
 },
 {
-  id:'1976-entebbe', year:1976, name:'Entebbe', when:'July 1976 · Entebbe, Uganda', unit:'Israeli commandos', where:'terminal',
+  id:'1976-entebbe',
+  plans:[{name:'Main door, one stack',desc:'Everyone through the main door into the hall.',follow:4},{name:'Three doors at once',desc:'Red takes the west door and Blue the east. You lead through the main door.',follow:0,els:[{name:'Red',n:2,door:'0:11,3',to:['terminal hall']},{name:'Blue',n:2,door:'0:11,17',to:['terminal hall']}]},{name:'Two doors',desc:'Blue hits the east door while you and two more take the main door.',follow:2,els:[{name:'Blue',n:2,door:'0:11,17',to:['terminal hall']}]}], year:1976, name:'Entebbe', when:'July 1976 · Entebbe, Uganda', unit:'Israeli commandos', where:'terminal',
   type:'clear', enemy:'hostiles', goal:'Secure the old terminal',
   brief:'Hijackers and Ugandan troops are holding more than a hundred hostages in the old terminal at Entebbe airport. Hit the hall at night, before they can turn their guns on the hostages.',
   history:'Israeli commandos freed 102 hostages in about 90 minutes. Three hostages and the assault commander, Yonatan Netanyahu, were killed during the raid.',
@@ -456,7 +471,8 @@ const LEVELS=[
   tips:['Once the shooting starts, the hijackers go for the hostages within seconds. Get into the hall fast.','Deal with the soldiers on the apron quietly, or the whole terminal hears it.']
 },
 {
-  id:'1977-mogadishu', year:1977, name:'Lufthansa 181', when:'October 1977 · Mogadishu, Somalia', unit:'GSG 9 (West German police)', where:'aircraft',
+  id:'1977-mogadishu',
+  plans:[{name:'Rear door, one stack',desc:'Everyone in through the rear right door.',follow:4},{name:'Front and rear',desc:'Red takes the front left door while you take the rear.',follow:2,els:[{name:'Red',n:2,door:'0:0,4',to:['front galley']}]},{name:'Every door at once',desc:'Four doors and exits open at the same moment, the way GSG 9 did it.',follow:1,els:[{name:'Red',n:1,door:'0:0,4',to:['front galley']},{name:'Blue',n:1,door:'0:0,15',to:['cabin']},{name:'Green',n:1,door:'0:6,15',to:['cabin']}]}], year:1977, name:'Lufthansa 181', when:'October 1977 · Mogadishu, Somalia', unit:'GSG 9 (West German police)', where:'aircraft',
   type:'clear', enemy:'hijackers', goal:'Clear the cabin',
   brief:'Four hijackers hold the passengers and crew of Lufthansa Flight 181 on the runway at Mogadishu. They have already murdered the captain. Breach the doors and clear the cabin.',
   history:'GSG 9 stormed the plane in about seven minutes. Three of the four hijackers were killed, and all 87 passengers and the four remaining crew were rescued.',
@@ -482,14 +498,15 @@ const LEVELS=[
   tips:['Hit two doors at once: breach the front, then flash the aisle before you step in.','Stay crouched in the aisle. The seat backs hide you while you line up shots.']
 },
 {
-  id:'1980-london', year:1980, name:'Iranian Embassy', when:'May 1980 · London, UK', unit:'SAS (British Army)', where:'embassy',
+  id:'1980-london',
+  plans:[{name:'One stack, front door',desc:'Breach the front door and fight up through the offices.',follow:4},{name:'Front and back at once',desc:'Red blows the rear balcony door and goes for the telex room while you take the front.',follow:2,els:[{name:'Red',n:2,door:'0:0,2',to:['telex room'],method:'charge'}]},{name:'Back way in',desc:'Start in the rear alley. Everyone goes in through the balcony door.',follow:4,start:{x:12.5,z:4.5,yaw:Math.PI/2}}], year:1980, name:'Iranian Embassy', when:'May 1980 · London, UK', unit:'SAS (British Army)', where:'embassy',
   type:'clear', enemy:'gunmen', goal:'Secure the embassy',
   brief:'Six gunmen have held 26 hostages in the Iranian Embassy for six days. They have just killed a hostage. Storm the building before they kill again.',
   history:'The SAS assault, Operation Nimrod, took 17 minutes. Five of the six gunmen were killed. The gunmen killed one more hostage during the assault, and the rest got out alive.',
   light:'urbanDusk', seed:1980, density:0, tree:'pine', exec:6, par:240,
   W:34, H:30, start:{x:14.5,z:27.5,yaw:0}, exfil:null,
   buildings:[{x:6,z:6,tint:0xe8e2d6,plan:[
-"##w###w###w###w###w###",
+"##L###w###w###w###w###",
 "#.....#.......#......#",
 "w.....D.......D......w",
 "#.....#.......#......#",
@@ -504,9 +521,9 @@ const LEVELS=[
 "#..........#.........#",
 "####w###L######w######"]}],
   rooms:[{n:"secretary's office",r0:1,c0:1,r1:3,c1:5},{n:'telex room',r0:1,c0:7,r1:4,c1:13},{n:"ambassador's office",r0:1,c0:15,r1:3,c1:20},{n:'corridor',r0:5,c0:1,r1:5,c1:20},{n:'front office',r0:7,c0:1,r1:12,c1:10},{n:'library',r0:7,c0:12,r1:12,c1:20}],
-  doorNames:{'0:2,6':'telex room door','0:2,14':"ambassador's door",'0:4,3':"secretary's door",'0:4,17':"ambassador's corridor door",'0:6,5':'front office door','0:6,12':'library door','0:6,18':'library east door','0:9,11':'connecting door','0:13,8':'front door'},
+  doorNames:{'0:0,2':'rear balcony door','0:2,6':'telex room door','0:2,14':"ambassador's door",'0:4,3':"secretary's door",'0:4,17':"ambassador's corridor door",'0:6,5':'front office door','0:6,12':'library door','0:6,18':'library east door','0:9,11':'connecting door','0:13,8':'front door'},
   creaky:[],
-  furn:[[0,1,8,5,1,1.0,0x5a5e62],[0,1,16,3,1,0.75,0x5d4532],[0,1,1,2,1,0.75,0x5d4532],[0,8,2,2,1,0.75,0x5d4532],[0,11,6,2,1,0.75,0x5d4532],[0,12,13,7,1,1.9,0x4a3a2a]],
+  furn:[[0,1,8,5,1,1.0,0x5a5e62],[0,1,16,3,1,0.75,0x5d4532],[0,3,1,2,1,0.75,0x5d4532],[0,8,2,2,1,0.75,0x5d4532],[0,11,6,2,1,0.75,0x5d4532],[0,12,13,7,1,1.9,0x4a3a2a]],
   lights:[[0,2,3,0.6],[0,2,10,0.7],[0,2,17,0.6],[0,5,6,0.5],[0,5,15,0.5],[0,9,5,0.7],[0,9,16,0.7]],
   poles:[{x:9.5,z:22.5,int:0.8,dist:9},{x:24.5,z:22.5,int:0.8,dist:9}],
   props:[{t:'mass',x0:0,z0:2,x1:5,z1:21,h:10,col:0xd8d0c0},{t:'mass',x0:29,z0:2,x1:34,z1:21,h:10,col:0xd0c8b8},{t:'mass',x0:5,z0:0,x1:29,z1:4,h:12,col:0xc8c0b0}],
@@ -523,7 +540,8 @@ const LEVELS=[
   tips:['Four hostages are in the telex room off the corridor. That is where the gunmen go first when the alarm goes up.','The front door is a deadbolt. Kick it, then flash the front office.']
 },
 {
-  id:'1982-padua', year:1982, name:'The Dozier Rescue', when:'January 1982 · Padua, Italy', unit:'NOCS (Italian police)', where:'flat',
+  id:'1982-padua',
+  plans:[{name:'You lead, fast',desc:'Everyone follows you straight to the back room.',follow:4},{name:'Team breaches, you follow',desc:'Red shotguns the door and runs for the general when you press X.',follow:0,els:[{name:'Red',n:4,door:'0:8,6',to:['back room'],method:'shotgun'}]}], year:1982, name:'The Dozier Rescue', when:'January 1982 · Padua, Italy', unit:'NOCS (Italian police)', where:'flat',
   type:'rescue', enemy:'terrorists', goal:'Rescue the general',
   brief:'Red Brigades terrorists have held US Brigadier General James Dozier for 42 days in a flat above a supermarket. Get in fast, before the guard in his room can react.',
   history:'Ten NOCS officers stormed the flat in about 90 seconds. Every captor was arrested without a single shot fired, and Dozier walked out unharmed.',
@@ -559,7 +577,8 @@ const LEVELS=[
   tips:['The guard in the back room will try to kill the general once he hears trouble. Go straight there.','Most of the cell gives up when you shout. Arrests score better than shots.']
 },
 {
-  id:'1992-ruby-ridge', year:1992, name:'Ruby Ridge', when:'August 1992 · Boundary County, Idaho', unit:'US Marshals and FBI', where:'cabin',
+  id:'1992-ruby-ridge',
+  plans:[{name:'Perimeter, weapons tight',desc:'The team spreads around the cabin and never fires. You do the talking.',follow:0,posts:[[12,8],[12,28],[5,17],[20,10]]},{name:'Stay together',desc:'The team stays behind you, weapons tight.',follow:4}], year:1992, name:'Ruby Ridge', when:'August 1992 · Boundary County, Idaho', unit:'US Marshals and FBI', where:'cabin',
   type:'surrender', enemy:'occupants', goal:'Talk everyone out alive',
   brief:'Federal agents must arrest a man who missed a court date on a weapons charge. He is armed and holed up in a remote cabin with his family. In 1992 this ended with three people dead. Talk everyone out alive.',
   history:'The real standoff lasted 11 days. Deputy US Marshal William Degan, 14-year-old Sammy Weaver and Vicki Weaver were killed. A Justice Department review later found the FBI\'s rules of engagement unconstitutional. This level is played in their memory.',
@@ -591,14 +610,15 @@ const LEVELS=[
   tips:['Stay outside and keep calling them out (V). Gunfire, breaching or walking in starts a fight nobody wins.','If it does turn violent, keep giving commands. People can still choose to surrender.']
 },
 {
-  id:'1997-lima', year:1997, name:'Japanese Residence', when:'April 1997 · Lima, Peru', unit:'Peruvian special forces', where:'residence',
+  id:'1997-lima',
+  plans:[{name:'Tunnels under both bedrooms',desc:'Red and Blue blast up into the hostage bedrooms while you storm the front.',follow:0,els:[{name:'Red',n:2,door:'0:0,3',to:['north-west bedroom'],method:'charge'},{name:'Blue',n:2,door:'0:0,22',to:['north-east bedroom'],method:'charge'}]},{name:'One tunnel',desc:'Red blasts into the north-west bedroom. You and two more take the front.',follow:2,els:[{name:'Red',n:2,door:'0:0,3',to:['north-west bedroom'],method:'charge'}]},{name:'Front entrances only',desc:'Both stacks hit the front doors. Quick to set up, slow to reach the hostages.',follow:2,els:[{name:'Red',n:2,door:'0:15,13',to:['main hall','north-east bedroom']}]}], year:1997, name:'Japanese Residence', when:'April 1997 · Lima, Peru', unit:'Peruvian special forces', where:'residence',
   type:'clear', enemy:'rebels', goal:'Secure the residence',
   brief:'Tupac Amaru rebels have held the Japanese ambassador\'s residence for four months. Commandos strike from tunnels while most of the rebels play football in the main hall. Reach the hostage rooms first.',
   history:'After 126 days, Operation Chavín de Huántar freed 71 of the 72 hostages. One hostage and two commandos died, and all 14 rebels were killed. Investigators later said some rebels were shot after surrendering.',
   light:'day', seed:1997, density:0.03, tree:'broad', exec:12, par:300,
   W:36, H:36, start:{x:17.5,z:32.5,yaw:0}, exfil:null,
   buildings:[{x:6,z:8,tint:0xf0e8d8,plan:[
-"###w#####w######w#####w#",
+"###L#####w######w#####L#",
 "#......#........#......#",
 "w......D........D......w",
 "#......#........#......#",
@@ -615,9 +635,9 @@ const LEVELS=[
 "#......#........#......#",
 "####w#####L##L#####w####"]}],
   rooms:[{n:'north-west bedroom',r0:1,c0:1,r1:4,c1:6},{n:'dining room',r0:1,c0:8,r1:4,c1:15},{n:'north-east bedroom',r0:1,c0:17,r1:4,c1:22},{n:'main hall',r0:5,c0:1,r1:10,c1:22},{n:'south-west office',r0:11,c0:1,r1:14,c1:6},{n:'foyer',r0:11,c0:8,r1:14,c1:15},{n:'south-east office',r0:11,c0:17,r1:14,c1:22}],
-  doorNames:{'0:2,7':'north-west door','0:2,16':'north-east door','0:5,4':'north-west hall door','0:5,19':'north-east hall door','0:10,4':'south-west hall door','0:10,19':'south-east hall door','0:12,7':'south-west door','0:12,16':'south-east door','0:15,10':'west entrance','0:15,13':'east entrance'},
+  doorNames:{'0:0,3':'north-west tunnel breach','0:0,22':'north-east tunnel breach','0:2,7':'north-west door','0:2,16':'north-east door','0:5,4':'north-west hall door','0:5,19':'north-east hall door','0:10,4':'south-west hall door','0:10,19':'south-east hall door','0:12,7':'south-west door','0:12,16':'south-east door','0:15,10':'west entrance','0:15,13':'east entrance'},
   creaky:[],
-  furn:[[0,2,10,4,2,0.78,0x5d4532],[0,1,1,2,1,0.6,0x6b5a5a],[0,1,21,2,1,0.6,0x6b5a5a],[0,14,20,2,1,0.75,0x5d4532],[0,11,1,2,1,0.75,0x5d4532]],
+  furn:[[0,2,10,4,2,0.78,0x5d4532],[0,1,1,2,1,0.6,0x6b5a5a],[0,1,17,2,1,0.6,0x6b5a5a],[0,14,20,2,1,0.75,0x5d4532],[0,11,1,2,1,0.75,0x5d4532]],
   lights:[[0,2,3,0.5],[0,2,20,0.5],[0,2,12,0.5],[0,7,6,0.5],[0,7,17,0.5],[0,12,3,0.5],[0,12,12,0.5],[0,12,20,0.5]],
   poles:[],
   props:[],
@@ -635,7 +655,8 @@ const LEVELS=[
   tips:['The hostage rooms are the north bedrooms. Rebels head there about twelve seconds after the alarm.','Shooting a rebel who has surrendered counts as unjustified, as it should.']
 },
 {
-  id:'2000-barras', year:2000, name:'Operation Barras', when:'September 2000 · Sierra Leone', unit:'SAS and Parachute Regiment', where:'village',
+  id:'2000-barras',
+  plans:[{name:'Straight to the prison hut',desc:'All five move through the village to the prisoners.',follow:4},{name:'Split the village',desc:'Red circles through the jungle to the prison hut. You clear the village with two more.',follow:2,els:[{name:'Red',n:2,door:'0:2,5',to:['prison hut'],stage:[9,3]}]},{name:'Overwatch',desc:'A marksman covers the village from the south. Three go with you.',follow:3,over:[[27,16]]}], year:2000, name:'Operation Barras', when:'September 2000 · Sierra Leone', unit:'SAS and Parachute Regiment', where:'village',
   type:'rescue', enemy:'militia', goal:'Rescue the soldiers',
   brief:'The West Side Boys militia are holding British soldiers in the jungle village of Gberi Bana. Hit the village at dawn, free the captives and get them to the helicopters.',
   findText:'Find the captured soldiers in the village.',
@@ -667,7 +688,8 @@ const LEVELS=[
   tips:['The prisoners are in the hut on the west side of the village, with a guard outside its door.','Free all three, then clear the trail to the landing zone before you lead them out.']
 },
 {
-  id:'2012-afghanistan', year:2012, name:'Mountain Compound', when:'December 2012 · eastern Afghanistan', unit:'US Navy SEALs', where:'compound',
+  id:'2012-afghanistan',
+  plans:[{name:'Quiet through the gate',desc:'One stack slips through the gate and into the main house.',follow:4},{name:'Two houses at once',desc:'Red clears the guard house while you and two more take the main house.',follow:2,els:[{name:'Red',n:2,door:'1:5,2',to:['guard house'],stage:[30,24]}]},{name:'Overwatch on the gate',desc:'A marksman covers the courtyard through the gate. Three go with you.',follow:3,over:[[29,20]]}], year:2012, name:'Mountain Compound', when:'December 2012 · eastern Afghanistan', unit:'US Navy SEALs', where:'compound',
   type:'rescue', enemy:'captors', goal:'Rescue the doctor',
   brief:'Taliban fighters are holding American aid doctor Dilip Joseph in a mountain compound east of Kabul. Intelligence says he may be moved or killed soon. Get in quietly and bring him out.',
   findText:'Find the doctor. He is held in the main house.',
@@ -1001,6 +1023,7 @@ function makeHuman(o,armed,phone){
   else if(o.hair){ const t=bx(0.26,0.06,0.26,lam(o.hair)); t.position.y=0.89; body.add(t); }
   const arms=[new THREE.Group(),new THREE.Group()];
   arms.forEach((g,i)=>{ const m=bx(0.12,0.55,0.12,shirt); m.position.y=-0.275; g.add(m); const h=bx(0.1,0.1,0.1,skin); h.position.y=-0.58; g.add(h); g.position.set(i?0.31:-0.31,0.55,0); body.add(g); });
+  if(o.band){ const bnd=bx(0.135,0.08,0.135,lam(o.band)); bnd.position.y=-0.14; arms[0].add(bnd); }
   let gun=null, held=null;
   if(armed==='rifle'){ gun=new THREE.Group(); const g1=bx(0.07,0.1,0.78,lam(0x1b1b1b)); g1.position.z=0.2; gun.add(g1); const mg=bx(0.05,0.16,0.08,lam(0x222222)); mg.position.set(0,-0.1,0.2); gun.add(mg); gun.position.set(0.1,0.38,0.16); body.add(gun); }
   if(armed==='pistol'){ held=new THREE.Group(); const s=bx(0.05,0.07,0.2,lam(0x1a1a1a)); s.position.z=0.06; held.add(s); const gr=bx(0.045,0.11,0.05,lam(0x1a1a1a)); gr.position.set(0,-0.07,0); held.add(gr); held.position.set(0,-0.6,0.06); arms[1].add(held); }
@@ -1008,7 +1031,7 @@ function makeHuman(o,armed,phone){
   return {root,body,legL,legR,armL:arms[0],armR:arms[1],gun,held,head};
 }
 function spawnAll(){
-  clearDyn(); chars.length=0;
+  clearDyn(); chars.length=0; mates.length=0; groups=[];
   M.spawns.forEach(s=>{
     const b=s.b===undefined?0:s.b;
     const parts=makeHuman(LOOKS[s.look],s.armed,s.phone);
@@ -1049,6 +1072,8 @@ function setPose(ch,p){
     case 'kneelUp': kneel(); m.armR.rotation.x=-2.9; m.armL.rotation.x=-2.9; m.armR.rotation.z=-0.2; m.armL.rotation.z=0.2; if(m.gun) m.gun.visible=false; if(ch.kind!=='civilian'&&m.held) m.held.visible=false; break;
     case 'restrained': kneel(); m.armR.rotation.x=0.5; m.armL.rotation.x=0.5; m.armR.rotation.z=0.25; m.armL.rotation.z=-0.25; if(m.gun) m.gun.visible=false; if(m.held) m.held.visible=false; break;
     case 'cower': kneel(); m.armR.rotation.x=-2.5; m.armL.rotation.x=-2.5; m.armR.rotation.z=0.6; m.armL.rotation.z=-0.6; if(m.held&&ch.kind!=='civilian') m.held.visible=ch.armedVisible; break;
+    case 'crouch': kneel(); m.armR.rotation.x=-1.5; m.armL.rotation.x=-1.45; m.armL.rotation.z=-0.5; if(m.gun){ m.gun.rotation.set(0,0,0); m.gun.position.set(0.08,0.47,0.24); } break;
+    case 'downed': m.root.rotation.x=-Math.PI/2; m.root.position.y=0.12; if(m.gun) m.gun.visible=false; break;
     case 'tied': kneel(); m.body.position.y=0.5; m.armR.rotation.x=0.45; m.armL.rotation.x=0.45; break;
   }
 }
@@ -1107,13 +1132,13 @@ const keys={}; let lmb=false, rmb=false;
 let state='brief', locked=false, fallback=false;
 let missionT=0, alarm=false, alarmT=-1, ending=null, talk=0, lastTalkT=-99, escalated=false;
 let stats, logList;
-function resetStats(){ stats={rounds:0,hits:0,unjust:0,kills:0,detained:0,civHurt:0,civKilled:0,captivesLost:0,fakerCaught:false,breaches:0,shells:0,bangs:0,dmg:0,shoutsWorked:0}; logList=[]; }
+function resetStats(){ stats={rounds:0,hits:0,unjust:0,kills:0,detained:0,civHurt:0,civKilled:0,captivesLost:0,matesDown:0,ff:0,fakerCaught:false,breaches:0,shells:0,bangs:0,dmg:0,shoutsWorked:0}; logList=[]; }
 function logEv(text,tone){ logList.push({t:missionT,text,tone:tone||''}); }
 function fmtT(t){ const m=Math.floor(t/60),s=Math.floor(t%60); return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
 function raiseAlarm(){ if(!alarm){ alarm=true; alarmT=missionT; } }
 
 /* input */
-const PREVENT=new Set(['Space','KeyF','KeyB','KeyH','KeyG','KeyV','KeyT','KeyN','KeyQ','KeyE','KeyC','KeyR','Digit1','Digit2','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','ControlLeft']);
+const PREVENT=new Set(['Space','KeyF','KeyB','KeyH','KeyG','KeyV','KeyT','KeyN','KeyQ','KeyE','KeyC','KeyR','Digit1','Digit2','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','ControlLeft','KeyX','KeyZ']);
 addEventListener('keydown',e=>{
   if(state!=='play') return;
   if(PREVENT.has(e.code)) e.preventDefault();
@@ -1131,6 +1156,8 @@ addEventListener('keydown',e=>{
     case 'KeyT': P.light=!P.light; spot.intensity=P.light?1.7:0; SFX.click(); break;
     case 'KeyN': P.nv=!P.nv; canvas.classList.toggle('nv',P.nv); $('nvRing').hidden=!P.nv; SFX.click(); break;
     case 'KeyF': interactPress(); break;
+    case 'KeyX': giveGo(); break;
+    case 'KeyZ': regroup(); break;
     case 'Escape': if(!locked) pause(); break;
     case 'KeyP': pause(); try{ document.exitPointerLock(); }catch(err){} break;
   }
@@ -1245,7 +1272,7 @@ function tryFire(press){
       const cur=hitsBy.get(hit.ch)||{dmg:0,part:hit.part}; cur.dmg+=dmg; if(PART_RANK[hit.part]>PART_RANK[cur.part]) cur.part=hit.part; hitsBy.set(hit.ch,cur); }
     else if(i<4) puff(hit.point,insideHouse(hit.point.x,hit.point.z)?0x8a7d68:0x5a4a35,def.pel>1?2:5,1.6);
   }
-  hitsBy.forEach((v,ch)=>hitChar(ch,v.part,v.dmg)); if(hitsBy.size) flashHit();
+  hitsBy.forEach((v,ch)=>{ if(ch.kind==='friendly') friendlyFire(ch,v.dmg); else hitChar(ch,v.part,v.dmg); }); if(hitsBy.size) flashHit();
   P.bloom=Math.min(P.bloom+def.bloom,0.045);
   P.pitch=clamp(P.pitch+def.recoil*(0.7+rand()*0.6),-1.45,1.45); P.yaw+=(rand()-.5)*def.recoil*0.6;
   P.kick=1;
@@ -1258,7 +1285,7 @@ function raycastWorld(o,dir,maxD,ignore){
   if(dir.y<0) s=Math.min(s,-o.y/dir.y);
   if(dir.y>0&&insideHouse(o.x,o.z)) s=Math.min(s,(WALL_H-o.y)/dir.y);
   const ray=new THREE.Ray(o,dir); const tmp=new V3(); let best=null;
-  for(const ch of chars){ if(!ch.alive||ch===ignore) continue; if(Math.hypot(ch.x-o.x,ch.z-o.z)>s+1) continue;
+  for(const ch of chars.concat(mates)){ if(!ch.alive||ch.down||ch===ignore) continue; if(Math.hypot(ch.x-o.x,ch.z-o.z)>s+1) continue;
     for(const b of hitBoxes(ch)){ const p=ray.intersectBox(b.box,tmp); if(p){ const d=o.distanceTo(p); if(d<s&&(!best||d<best.s)) best={ch,part:b.name,s:d,point:p.clone()}; } } }
   if(best) return best;
   return {point:o.clone().addScaledVector(dir,s),s};
@@ -1289,13 +1316,13 @@ function kill(ch,v,byHostile){
   decal(ch.x+(rand()-.5)*0.3,ch.z+(rand()-.5)*0.3,0x3a0808,0.6);
 }
 function dropWeapon(ch){ ch.dropped=true; const g=bx(ch.armed==='rifle'?0.08:0.05,0.06,ch.armed==='rifle'?0.78:0.2,lam(0x1b1b1b)); g.position.set(ch.x+0.4*Math.sin(ch.a),0.04,ch.z+0.4*Math.cos(ch.a)); g.rotation.y=ch.a+0.6; dyn.add(g); if(ch.parts.gun) ch.parts.gun.visible=false; if(ch.parts.held&&ch.kind!=='civilian') ch.parts.held.visible=false; }
-function restrain(ch){
+function restrain(ch,by){
   SFX.cuff(); const was=ch.state; ch.state='restrained'; ch.stun=0; ch.path=[]; setPose(ch,'restrained');
   const room=roomOf(ch.x,ch.z);
   if(ch.kind==='civilian'){ logEv(`Restrained a ${ch.label.toLowerCase()} in the ${room} for safety. No weapon found.`,'good'); say(ch,'Okay... okay.'); }
   else if(ch.kind==='subject'||ch.wasSubject){ stats.detained++; logEv('Took an occupant into custody.','good'); }
-  else if(was==='fake'){ stats.detained++; stats.fakerCaught=true; ch.armedVisible=false; logEv(`Restrained a ${ch.label.toLowerCase()} in the ${room} with his hands up. Found a concealed pistol.`,'good'); }
-  else { stats.detained++; logEv(`Restrained and searched a surrendered ${ch.label.toLowerCase()} in the ${room}.`,'good'); }
+  else if(was==='fake'){ stats.detained++; stats.fakerCaught=true; ch.armedVisible=false; logEv(`${by?by.label+' restrained':'Restrained'} a ${ch.label.toLowerCase()} in the ${room} with his hands up. Found a concealed pistol.`,'good'); }
+  else { stats.detained++; logEv(`${by?by.label+' restrained':'Restrained'} and searched a surrendered ${ch.label.toLowerCase()} in the ${room}.`,'good'); }
 }
 function freeHostage(ch){
   SFX.zip(); ch.state='follow'; setPose(ch,'stand'); if(ch.chair){ dyn.remove(ch.chair); }
@@ -1320,9 +1347,7 @@ function shout(){
   for(const ch of chars){ if(!ch.alive||ch.stun>0.5) continue; const d=Math.hypot(ch.x-P.x,ch.z-P.z); if(d>13||!los(ch.x,ch.z,P.x,P.z)) continue;
     if(ch.kind==='civilian'&&['calm','cower'].includes(ch.state)){ ch.state='comply'; ch.wait=1.2; setPose(ch,'handsUp'); if(!ch.said.comply){ ch.said.comply=1; say(ch,'Please don\'t shoot! I\'m not with them!'); } }
     if(ch.kind!=='hostile') continue;
-    if(ch.ai==='complier'&&!['surrendered','restrained'].includes(ch.state)){ ch.state='surrendered'; ch.wait=1; if(ch.armedVisible){ dropWeapon(ch); ch.armedVisible=false; } setPose(ch,'handsUp'); say(ch,'Okay! Okay! Don\'t shoot!'); stats.shoutsWorked++; logEv(`${ch.wasSubject?'An occupant':'A '+ch.label.toLowerCase()} in the ${roomOf(ch.x,ch.z)} dropped his weapon and surrendered after commands.`,'good'); }
-    else if(ch.ai==='faker'&&!['fake','restrained'].includes(ch.state)){ ch.state='fake'; ch.armedVisible=false; ch.fakeT=3.5+rand()*2.5; ch.wait=1; setPose(ch,'handsUp'); say(ch,'Alright... alright.'); }
-    else if(['idle','patrol','investigate','alert'].includes(ch.state)){ engage(ch,0.45); }
+    commandHostile(ch,P);
   }
 }
 function escalate(reason){
@@ -1382,7 +1407,7 @@ function onHear(ch,x,z,kind){
     }
   }
 }
-function engage(ch,react){ if(ch.state==='engage') return; ch.state='engage'; ch.react=react; ch.spot=1; ch.path=[]; ch.lost=0; ch.last={x:P.x,z:P.z}; raiseAlarm();
+function engage(ch,react,src){ if(ch.state==='engage') return; src=src||P; ch.state='engage'; ch.react=react; ch.spot=1; ch.path=[]; ch.lost=0; ch.tgt=src; ch.last={x:src.x,z:src.z}; raiseAlarm();
   if(!ch.said.contact){ ch.said.contact=1; say(ch,ch.wasSubject?'They\'re attacking us!':['There! Shoot him!','Contact!','He\'s inside!'][Math.floor(rand()*3)]); }
   for(const o of chars){ if(o!==ch&&o.alive&&o.kind==='hostile'&&['idle','patrol'].includes(o.state)&&Math.hypot(o.x-ch.x,o.z-ch.z)<14) onHear(o,ch.x,ch.z,'breach'); }
 }
@@ -1397,7 +1422,8 @@ function canSee(ch){
   if(Math.abs(angDiff(Math.atan2(dx,dz),ch.a))>fov/2&&d>1.6) return false;
   return los(ch.x,ch.z,P.x,P.z);
 }
-function spotRate(ch,d){
+function spotRate(ch,d,t){
+  if(t&&t!==P){ let r=1/(0.25+d*0.09); if(t.state==='stacked'||t.state==='overwatch'||P.crouch) r*=0.5; if(!insideHouse(t.x,t.z)) r*=0.75; if(ENV[M.light].dark&&!insideHouse(t.x,t.z)) r*=0.6; r*={idle:0.5,patrol:0.6,investigate:1.1,alert:1.9}[ch.state]||1; if(d<2.2) r*=3; return r; }
   let r=1/(0.25+d*0.09);
   if(P.crouch) r*=0.55; if(P.light) r*=1.9; if(P.sprinting) r*=1.3; if(!P.moving) r*=0.8;
   if(!insideHouse(P.x,P.z)) r*=0.75;
@@ -1411,7 +1437,7 @@ function moveAlong(ch,dt){
   if(!ch.path.length) return false;
   const [c,r]=ch.path[0]; const tx=c+.5,tz=r+.5;
   const d=doorAt(c,r);
-  if(d&&!d.open){ const dd=Math.hypot(tx-ch.x,tz-ch.z); if(dd<1.25){ openDoor(d,ch.x,ch.z,'ai'); if(d.creaky) SFX.creak(); else SFX.door(); } }
+  if(d&&!d.open){ const dd=Math.hypot(tx-ch.x,tz-ch.z); if(dd<1.25){ if(ch.kind==='friendly'&&d.locked) mateBreachDoor(ch,d); else { openDoor(d,ch.x,ch.z,'ai'); if(d.creaky) SFX.creak(); else SFX.door(); } } }
   const dx=tx-ch.x,dz=tz-ch.z,dist=Math.hypot(dx,dz);
   if(d&&!d.open&&dist<1.15) return true;
   const step=ch.speed*dt;
@@ -1421,7 +1447,11 @@ function moveAlong(ch,dt){
   return true;
 }
 function muzzleOf(ch){ const m=ch.parts.gun&&ch.parts.gun.visible?ch.parts.gun:ch.parts.held; const mp=new V3(); if(m) m.localToWorld(mp.set(0,0,0.5)); else mp.set(ch.x,1.4,ch.z); return mp; }
-function enemyShoot(ch){
+function enemyShoot(ch,t){
+  if(t&&t!==P){ const d=Math.hypot(t.x-ch.x,t.z-ch.z); const p=clamp(0.55-d*0.02+Math.min(ch.aimT,1.5)*0.1-(t.state==='stacked'||t.state==='overwatch'?0.15:0),0.08,0.8); const mp=muzzleOf(ch);
+    tracer(mp,new V3(t.x+(rand()-.5)*(rand()<p?0.2:1.4),1.2,t.z+(rand()-.5)*(rand()<p?0.2:1.4)),0xffb070); danger();
+    SFX.shot(ch.armed==='pistol'?'pistol':'rifle',ch.x,ch.z); muzzleLight.position.copy(mp); muzzleLight.intensity=2.2; pushNoise(ch.x,ch.z,45,'gun',false);
+    if(rand()<p) damageMate(t,ch.armed==='pistol'?15:21); return; }
   const d=Math.hypot(P.x-ch.x,P.z-ch.z);
   let p=0.6-d*0.022; if(P.moving) p-=0.1; if(P.sprinting) p-=0.12; if(P.crouch) p-=0.07; if(Math.abs(P.lean)>0.5) p-=0.12; p+=Math.min(ch.aimT,1.5)*0.1;
   if(darkOutside()) p-=0.1;
@@ -1436,7 +1466,7 @@ function enemyShoot(ch){
 }
 // After the alarm, hostiles near captives turn on them unless the player keeps them busy.
 function tryExecute(ch,dt){
-  if(!M.exec||alarmT<0||missionT-alarmT<M.exec||ch.sees||!ch.armedVisible) return false;
+  if(!M.exec||alarmT<0||missionT-alarmT<M.exec||ch.seesAny||!ch.armedVisible||friendlyNear(ch)) return false;
   ch.execCd-=dt; if(ch.execCd>0) return false;
   let best=null,bd=7;
   for(const c of chars){ if(!c.alive) continue; if(!((c.kind==='civilian'&&c.captive)||(c.kind==='hostage'&&c.state==='tied'))) continue; const d=Math.hypot(c.x-ch.x,c.z-ch.z); if(d<bd&&los(ch.x,ch.z,c.x,c.z)){ bd=d; best=c; } }
@@ -1469,12 +1499,12 @@ function hostileAI(ch,dt){
   if(ch.state==='surrendered'){ ch.wait-=dt; if(ch.wait<=0) setPose(ch,'kneelUp'); return; }
   if(ch.state==='restrained') return;
   if(ch.state==='fake'){ ch.wait-=dt; if(ch.wait<=0) setPose(ch,'kneelUp'); turnTo(ch,P.x,P.z,dt*2);
-    ch.fakeT-=playerWatching(ch)?dt*0.2:dt;
+    ch.fakeT-=watched(ch)?dt*0.2:dt;
     if(ch.fakeT<=0){ ch.armedVisible=true; ch.state='spring'; setPose(ch,'aim'); engage(ch,0.18); ch.state='engage'; say(ch,'Now!'); logEv(`The ${ch.label.toLowerCase()} in the ${roomOf(ch.x,ch.z)} with raised hands drew a concealed pistol.`); }
     return; }
-  const d=Math.hypot(P.x-ch.x,P.z-ch.z);
-  const sees=P.alive&&canSee(ch); ch.sees=sees;
-  if(ch.state!=='engage'){ if(sees){ ch.spot+=spotRate(ch,d)*dt; if(ch.spot>=1) engage(ch,(ch.state==='idle'||ch.state==='patrol')?0.75+rand()*0.45:(ch.ai==='complier'?0.9:0.32+rand()*0.3)); } else ch.spot=Math.max(0,ch.spot-dt*0.25); }
+  const tv=visibleTarget(ch);
+  const sees=!!tv; ch.seesAny=sees; ch.sees=sees&&tv.t===P;
+  if(ch.state!=='engage'){ if(sees){ ch.spot+=spotRate(ch,tv.d,tv.t)*dt; if(ch.spot>=1) engage(ch,(ch.state==='idle'||ch.state==='patrol')?0.75+rand()*0.45:(ch.ai==='complier'?0.9:0.32+rand()*0.3),tv.t); } else ch.spot=Math.max(0,ch.spot-dt*0.25); }
   if(ch.fireCd>0) ch.fireCd-=dt;
   if(ch.state!=='idle'&&ch.state!=='patrol'&&tryExecute(ch,dt)) return;
   switch(ch.state){
@@ -1502,10 +1532,11 @@ function hostileAI(ch,dt){
       setPose(ch,'aim');
       if(sees){
         if(ch.lost>1.5) ch.react=Math.max(ch.react,0.22+rand()*0.25);
-        ch.last={x:P.x,z:P.z}; ch.lost=0; ch.path=[]; ch.hunting=false; turnTo(ch,P.x,P.z,dt*7); ch.aimT+=dt;
+        const t=tv.t; ch.tgt=t;
+        ch.last={x:t.x,z:t.z}; ch.lost=0; ch.path=[]; ch.hunting=false; turnTo(ch,t.x,t.z,dt*7); ch.aimT+=dt;
         if(ch.react>0) ch.react-=dt;
-        else if(ch.fireCd<=0&&Math.abs(angDiff(Math.atan2(P.x-ch.x,P.z-ch.z),ch.a))<0.3){
-          enemyShoot(ch); if(ch.burst<=0) ch.burst=ch.armed==='pistol'?2:3; ch.burst--; ch.fireCd=ch.burst>0?0.12:0.55+rand()*0.5;
+        else if(ch.fireCd<=0&&Math.abs(angDiff(Math.atan2(t.x-ch.x,t.z-ch.z),ch.a))<0.3){
+          enemyShoot(ch,t); if(ch.burst<=0) ch.burst=ch.armed==='pistol'?2:3; ch.burst--; ch.fireCd=ch.burst>0?0.12:0.55+rand()*0.5;
         }
       } else {
         ch.aimT=0; ch.lost+=dt;
@@ -1549,6 +1580,214 @@ function warpBehind(ch){
     if(!blocksAI(Math.floor(x),Math.floor(z))&&los(P.x,P.z,x,z)){ ch.x=x; ch.z=z; ch.path=[]; ch.farT=0; return; }
   }
   ch.farT=0;
+}
+
+/* ================= TEAM ================= */
+// Four AI operators. A plan puts them with the player, stacked at other doors, on overwatch or on a perimeter.
+const mates=[]; let groups=[], plan=null, planIndex=0, goGiven=false, teamBangs=[];
+const BAND={Alpha:0xe8e8e8,Red:0xd04a3a,Blue:0x3a7ad0,Green:0x4aa05a,Gold:0xd8a830};
+const weaponsTight=()=>M.type==='surrender';
+function levelPlans(){ return M.plans&&M.plans.length?M.plans:[{name:'One stack',desc:'Everyone follows you.',follow:4}]; }
+function freeNear(x,z){ if(!blocksAI(Math.floor(x),Math.floor(z))) return {x,z}; for(let rr=1;rr<5;rr++) for(let dz=-rr;dz<=rr;dz++) for(let dx=-rr;dx<=rr;dx++){ const c=Math.floor(x)+dx, r=Math.floor(z)+dz; if(!blocksAI(c,r)) return {x:c+.5,z:r+.5}; } return {x,z}; }
+function doorInfo(k){
+  const [b,rc]=k.split(':'); const [r,c]=rc.split(',').map(Number); const B=BLD[+b]; const gc=B.x+c, gr=B.z+r; const d=doorAt(gc,gr);
+  const sides=d.horiz?[[0,-1],[0,1]]:[[-1,0],[1,0]];
+  const outDir=sides.find(([dc,dr])=>bldAt(gc+dc+.5,gr+dr+.5)<0)||sides[0];
+  const out={x:gc+outDir[0]+.5,z:gr+outDir[1]+.5};
+  let inn={x:gc-outDir[0]*2+.5,z:gr-outDir[1]*2+.5}; if(blocksAI(Math.floor(inn.x),Math.floor(inn.z))) inn={x:gc-outDir[0]+.5,z:gr-outDir[1]+.5};
+  const lat=d.horiz?[1,0]:[0,1]; const stack=[];
+  for(const sgn of [1,-1]) for(let k2=1;k2<=4;k2++){ const x=out.x+lat[0]*sgn*k2, z=out.z+lat[1]*sgn*k2; if(blocksAI(Math.floor(x),Math.floor(z))) break; stack.push({x,z}); }
+  stack.sort((a,b2)=>Math.hypot(a.x-out.x,a.z-out.z)-Math.hypot(b2.x-out.x,b2.z-out.z));
+  return {door:d,out,inn,stack};
+}
+function roomPoints(name,from){
+  const pts=chars.filter(c=>c.alive&&((c.kind==='civilian'&&c.captive)||c.kind==='hostage')&&roomOf(c.x,c.z)===name).map(c=>({x:c.x,z:c.z}));
+  if(!pts.length) for(const rm of M.rooms){ if(rm.n===name){ const b=BLD[rm.b||0]; pts.push(freeNear(b.x+(rm.c0+rm.c1)/2+.5,b.z+(rm.r0+rm.r1)/2+.5)); break; } }
+  if(from) pts.sort((a,b)=>Math.hypot(a.x-from.x,a.z-from.z)-Math.hypot(b.x-from.x,b.z-from.z));
+  return pts;
+}
+function makeMate(id,label,el,x,z,a){
+  const look=Object.assign({},LOOKS.operator,{skin:(id.charCodeAt(0)+id.length)%4,band:BAND[el]||BAND.Alpha});
+  const parts=makeHuman(look,'rifle',false); dyn.add(parts.root);
+  const m={id,label,el,kind:'friendly',x,z,a,parts,hp:100,alive:true,down:false,state:'follow',path:[],speed:2.6,stepT:0,fireCd:0,react:0,tgt:null,cmd:new Set(),wp:null,repath:0,cuffT:0,cuffTarget:null,armed:'rifle',armedVisible:true,pose:'',post:null,over:false,pitch:0.75+((id.charCodeAt(0)*7)%5)*0.06,group:null,farT:0};
+  setPose(m,'low'); place(m); mates.push(m); return m;
+}
+function spawnTeam(pi){
+  mates.length=0; groups=[]; goGiven=false; teamBangs=[];
+  const plans=levelPlans(); planIndex=clamp(pi||0,0,plans.length-1); plan=plans[planIndex];
+  const s=plan.start||START, by=s.yaw||0, fx=Math.sin(by), fz=Math.cos(by);
+  for(let i=0;i<(plan.follow||0);i++){ const p=freeNear(s.x+fx*1.2*(i+1),s.z+fz*1.2*(i+1)); makeMate('a'+i,`Alpha ${i+2}`,'Alpha',p.x,p.z,by); }
+  (plan.els||[]).forEach(e=>{
+    const info=doorInfo(e.door); const g={name:e.name,members:[],info,to:e.to||[],method:e.method||'auto',bang:e.bang!==false,phase:'stacked',t:0,banged:false,staged:!!e.stage};
+    for(let i=0;i<e.n;i++){
+      let sp;
+      if(e.stage){ const q=toWorld(e.stage,-1); sp=freeNear(q.x+(i%2)*0.9,q.z+Math.floor(i/2)*0.9); }
+      else sp=info.stack[i]||freeNear(info.out.x+(info.out.x-info.inn.x)*0.5*(i+1),info.out.z+(info.out.z-info.inn.z)*0.5*(i+1));
+      const m=makeMate(e.name[0].toLowerCase()+i,`${e.name} ${i+1}`,e.name,sp.x,sp.z,Math.atan2(info.out.x-sp.x,info.out.z-sp.z)); m.state='stacked'; m.group=g; g.members.push(m); }
+    groups.push(g); });
+  const ctr=BLD[0]?{x:BLD[0].x+BLD[0].w/2,z:BLD[0].z+BLD[0].d/2}:{x:WW/2,z:WH/2};
+  (plan.over||[]).forEach((pt,i)=>{ const q=toWorld(pt,-1), p=freeNear(q.x,q.z); const m=makeMate('o'+i,'Marksman','Gold',p.x,p.z,Math.atan2(ctr.x-p.x,ctr.z-p.z)); m.state='overwatch'; m.over=true; m.post=p; });
+  (plan.posts||[]).forEach((pt,i)=>{ const q=toWorld(pt,-1), p=freeNear(q.x,q.z); const m=makeMate('p'+i,`Agent ${i+2}`,'Blue',p.x,p.z,Math.atan2(ctr.x-p.x,ctr.z-p.z)); m.state='post'; m.post=p; });
+}
+function giveGo(){
+  if(goGiven||!groups.some(g=>g.phase==='stacked')) return;
+  goGiven=true; say(null,'All teams, go, go, go!'); logEv('Gave the go signal. Every team moved at once.');
+}
+function regroup(){
+  const any=mates.filter(m=>!m.down&&!['stacked','follow'].includes(m.state)); if(!any.length) return;
+  any.forEach(m=>{ m.state='follow'; m.path=[]; if(m.cuffTarget){ m.cuffTarget.claim=null; m.cuffTarget=null; } });
+  groups.forEach(g=>{ if(g.phase!=='stacked') g.phase='done'; });
+  say(null,'Regroup on me!');
+}
+function friendlyNear(ch){
+  if(P.alive&&Math.hypot(P.x-ch.x,P.z-ch.z)<9&&los(P.x,P.z,ch.x,ch.z)) return true;
+  return mates.some(m=>!m.down&&Math.hypot(m.x-ch.x,m.z-ch.z)<9&&los(m.x,m.z,ch.x,ch.z));
+}
+function watched(ch){ return playerWatching(ch)||mates.some(m=>!m.down&&Math.hypot(m.x-ch.x,m.z-ch.z)<7&&los(m.x,m.z,ch.x,ch.z)); }
+function canSeeMate(ch,m,d){
+  const out=!insideHouse(m.x,m.z), range=out?(ENV[M.light].dark?15:30):22; if(d>range) return false;
+  const fov=(ch.state==='engage'||ch.state==='alert'||ch.state==='investigate')?2.5:1.9;
+  if(Math.abs(angDiff(Math.atan2(m.x-ch.x,m.z-ch.z),ch.a))>fov/2&&d>1.6) return false;
+  return los(ch.x,ch.z,m.x,m.z);
+}
+function visibleTarget(ch){
+  let best=null;
+  if(P.alive&&canSee(ch)) best={t:P,d:Math.hypot(P.x-ch.x,P.z-ch.z)};
+  for(const m of mates){ if(m.down) continue; const d=Math.hypot(m.x-ch.x,m.z-ch.z); if(best&&d>=best.d) continue; if(canSeeMate(ch,m,d)) best={t:m,d}; }
+  return best;
+}
+function commandHostile(ch,src){
+  if(ch.kind!=='hostile'||!ch.alive) return;
+  if(ch.ai==='complier'&&!['surrendered','restrained'].includes(ch.state)){ ch.state='surrendered'; ch.wait=1; if(ch.armedVisible){ dropWeapon(ch); ch.armedVisible=false; } setPose(ch,'handsUp'); say(ch,'Okay! Okay! Don\'t shoot!'); stats.shoutsWorked++; logEv(`${ch.wasSubject?'An occupant':'A '+ch.label.toLowerCase()} in the ${roomOf(ch.x,ch.z)} dropped his weapon and surrendered after commands.`,'good'); }
+  else if(ch.ai==='faker'&&!['fake','restrained'].includes(ch.state)){ ch.state='fake'; ch.armedVisible=false; ch.fakeT=3.5+rand()*2.5; ch.wait=1; setPose(ch,'handsUp'); say(ch,'Alright... alright.'); }
+  else if(['idle','patrol','investigate','alert'].includes(ch.state)){ engage(ch,0.45,src); }
+}
+function mateThreat(m){
+  let best=null,bd=m.over?42:24;
+  for(const h of chars){ if(!h.alive||h.kind!=='hostile'||['surrendered','restrained','fake'].includes(h.state)) continue; const d=Math.hypot(h.x-m.x,h.z-m.z); if(d>=bd||!los(m.x,m.z,h.x,h.z)) continue; bd=d; best=h; }
+  return best&&{h:best,d:bd};
+}
+function mateShoot(m,h,d){
+  const mp=muzzleOf(m); const p=clamp((m.over?0.9:0.74)-d*(m.over?0.008:0.018)+(h.stun>0?0.15:0),0.25,0.95);
+  tracer(mp,new V3(h.x+(rand()-.5)*0.3,1.2,h.z+(rand()-.5)*0.3),0xffd08a);
+  SFX.shot('rifle',m.x,m.z); muzzleLight.position.copy(mp); muzzleLight.intensity=2.2; danger();
+  pushNoise(m.x,m.z,45,'gun',false);
+  if(rand()<p){ let dmg=rand()<0.25?100:(m.over?80:48); if(h.armor&&dmg<100) dmg*=0.5; h.hp-=dmg; puff(new V3(h.x,1.2,h.z),0x6a1010,5,1.3);
+    if(h.hp<=0) kill(h,{ok:true},false); else { h.stun=Math.max(h.stun,0.2); if(h.state!=='engage') engage(h,0.3,m); } }
+}
+function damageMate(m,dmg){
+  if(m.down) return; m.hp-=dmg*1.3; danger();
+  if(m.hp<=0){ m.down=true; m.state='down'; m.path=[]; if(m.cuffTarget){ m.cuffTarget.claim=null; m.cuffTarget=null; } stats.matesDown++; logEv(`${m.label} is down, wounded.`,'bad'); subtitle('',`Man down. ${m.label} is hit.`); m.pose=''; setPose(m,'downed'); }
+}
+function friendlyFire(m,dmg){ stats.unjust++; stats.ff++; logEv(`Your round hit ${m.label}. Friendly fire.`,'bad'); say(m,'Check fire! Check fire!'); damageMate(m,dmg); }
+function mateBreachDoor(m,d){
+  SFX.shot('shotgun',m.x,m.z); openDoor(d,m.x,m.z,'shotgun'); stunBehind(d,1.8); stats.breaches++; danger();
+  pushNoise(d.c+.5,d.r+.5,45,'breach',false); logEv(`${m.label} shotgunned the ${d.name}.`);
+}
+function teamBreach(g,br){
+  const d=g.info.door; const loud=alarm||g.method==='charge'||g.method==='shotgun'||(d.locked&&!d.open);
+  if(!d.open){
+    if(g.method==='charge'){ SFX.bang(d.c+.5,d.r+.5); openDoor(d,br.x,br.z,'shotgun'); stunBehind(d,2.6); stats.breaches++; pushNoise(d.c+.5,d.r+.5,45,'breach',false); logEv(`${g.name} team blew the ${d.name}.`); }
+    else if(d.locked||g.method==='shotgun'){ SFX.shot('shotgun',br.x,br.z); openDoor(d,br.x,br.z,'shotgun'); stunBehind(d,1.8); stats.breaches++; pushNoise(d.c+.5,d.r+.5,45,'breach',false); logEv(`${g.name} team breached the ${d.name}.`); }
+    else { openDoor(d,br.x,br.z,loud?'kick':'hand'); if(loud){ SFX.kick(); pushNoise(d.c+.5,d.r+.5,24,'breach',false); } else SFX.door(); logEv(`${g.name} team went in through the ${d.name}.`); }
+  } else logEv(`${g.name} team went in through the ${d.name}.`);
+  if(g.bang&&loud){ teamBangs.push({x:g.info.inn.x,z:g.info.inn.z,t:0.45}); g.banged=true; }
+  danger();
+}
+function updateGroups(dt){
+  for(const g of groups){
+    const alive=g.members.filter(m=>!m.down);
+    if(!alive.length||g.phase==='done') continue;
+    if(g.phase==='stacked'){
+      if(goGiven||(alarm&&missionT-alarmT>1.0)){ g.phase='moving'; if(!goGiven) logEv(`${g.name} team heard trouble and went in.`);
+        alive.forEach((m,i)=>{ m.state=i===0?'breacher':'waiting'; m.path=(i===0||g.staged)?pathTo(m.x,m.z,g.info.out.x,g.info.out.z):[]; m.speed=3.0; }); }
+      continue; }
+    if(g.phase==='moving'){
+      let br=alive.find(m=>m.state==='breacher'); if(!br){ br=alive[0]; br.state='breacher'; br.path=pathTo(br.x,br.z,g.info.out.x,g.info.out.z); }
+      const db=Math.hypot(br.x-g.info.out.x,br.z-g.info.out.z);
+      if(db<0.45||(!br.path.length&&db<1.4)){ teamBreach(g,br); g.phase='breaching'; g.t=0; }
+      else if(!br.path.length&&!br.tgt) br.path=pathTo(br.x,br.z,g.info.out.x,g.info.out.z);
+      continue; }
+    if(g.phase==='breaching'){ g.t+=dt; if(g.t>(g.banged?0.9:0.3)){ g.phase='clearing';
+        const pts=g.to.flatMap(n=>roomPoints(n,g.info.inn)); const use=pts.length?pts:[g.info.inn];
+        alive.forEach((m,i)=>{ m.state='clearing'; m.wp=use[i%use.length]; m.path=pathTo(m.x,m.z,m.wp.x,m.wp.z); m.speed=3.0; }); }
+      continue; }
+    if(g.phase==='clearing'&&alive.every(m=>m.state!=='clearing')) g.phase='holding';
+  }
+}
+function mateCuff(m,dt){
+  if(weaponsTight()) return false;
+  let h=m.cuffTarget;
+  if(h&&(!h.alive||!['surrendered','fake'].includes(h.state))){ h.claim=null; h=m.cuffTarget=null; }
+  if(!h){ let bd=9; for(const c of chars){ if(!c.alive||c.kind!=='hostile'||!['surrendered','fake'].includes(c.state)||(c.claim&&c.claim!==m)) continue; const d=Math.hypot(c.x-m.x,c.z-m.z); if(d<bd&&los(m.x,m.z,c.x,c.z)){ bd=d; h=c; } }
+    if(!h) return false; m.cuffTarget=h; h.claim=m; m.path=pathTo(m.x,m.z,h.x,h.z); m.cuffT=0; }
+  const d=Math.hypot(h.x-m.x,h.z-m.z); turnTo(m,h.x,h.z,dt*5); setPose(m,'aim');
+  if(d>1.1){ if(!m.path.length) m.path=pathTo(m.x,m.z,h.x,h.z); m.speed=2.4; moveAlong(m,dt); m.cuffT=0; return true; }
+  m.path=[]; m.cuffT+=dt; if(m.cuffT>1.0){ h.claim=null; m.cuffTarget=null; restrain(h,m); }
+  return true;
+}
+function mateAI(m,dt){
+  if(m.down){ place(m); return; }
+  m.fireCd-=dt;
+  const th=weaponsTight()?null:mateThreat(m);
+  // Stay quiet until compromised: act only once the alarm is up, the gunman is already shooting, or this team has started its assault.
+  const assaulting=!!m.group&&m.group.phase!=='stacked'&&m.state!=='follow';
+  if(th&&(alarm||th.h.state==='engage'||assaulting)&&(m.state!=='stacked'||th.h.state==='engage')){
+    const h=th.h; turnTo(m,h.x,h.z,dt*9); setPose(m,m.state==='stacked'||m.state==='overwatch'?'crouch':'aim');
+    if(m.tgt!==h){ m.tgt=h; m.react=0.35+rand()*0.4; }
+    if(m.react>0) m.react-=dt;
+    else if(!m.cmd.has(h.id)&&h.state!=='engage'&&h.state!=='spring'&&h.stun<=0){ m.cmd.add(h.id); say(m,['Drop the weapon!','Hands! Show me your hands!','Down! Get on the ground!'][Math.floor(rand()*3)]); commandHostile(h,m); m.react=0.45; }
+    else if(m.fireCd<=0){ mateShoot(m,h,th.d); m.fireCd=0.3+rand()*0.25; }
+    place(m); return;
+  }
+  m.tgt=null;
+  if((m.state==='follow'||m.state==='hold')&&mateCuff(m,dt)){ place(m); return; }
+  switch(m.state){
+    case 'stacked': setPose(m,'crouch'); if(m.group&&!m.group.staged) turnTo(m,m.group.info.out.x,m.group.info.out.z,dt*3); break;
+    case 'waiting': setPose(m,'aim'); if(m.path.length) moveAlong(m,dt); break;
+    case 'breacher': setPose(m,'aim'); moveAlong(m,dt); break;
+    case 'clearing': setPose(m,'aim'); if(!moveAlong(m,dt)||Math.hypot(m.x-m.wp.x,m.z-m.wp.z)<1.2){ m.path=[]; m.state='hold'; } break;
+    case 'hold': setPose(m,'aim'); m.a+=dt*0.5*Math.sin(missionT*0.7+m.x); break;
+    case 'overwatch': setPose(m,'crouch'); break;
+    case 'post': setPose(m,'low'); break;
+    case 'follow': {
+      const fl=mates.filter(x=>x.state==='follow'&&!x.down); const i=fl.indexOf(m); const L=i<=0?P:fl[i-1];
+      const d=Math.hypot(L.x-m.x,L.z-m.z);
+      if(d>1.35){ m.repath-=dt; if(m.repath<=0||!m.path.length){ m.path=pathTo(m.x,m.z,L.x,L.z); m.repath=0.4; } m.speed=d>4?3.8:(P.crouch?1.7:2.8); moveAlong(m,dt); }
+      else { m.path=[]; turnTo(m,P.x+(P.x-m.x),P.z+(P.z-m.z),dt*2); }
+      setPose(m,P.crouch&&!alarm?'crouch':(alarm?'aim':'low'));
+      if(d>14&&!los(m.x,m.z,P.x,P.z)){ m.farT+=dt; if(m.farT>6) warpBehind(m); } else m.farT=0;
+      break; }
+  }
+  place(m);
+}
+function updateTeam(dt){
+  updateGroups(dt);
+  for(const m of mates) mateAI(m,dt);
+  for(let i=teamBangs.length-1;i>=0;i--){ const b=teamBangs[i]; b.t-=dt; if(b.t<=0){ detonate(new V3(b.x,1,b.z)); teamBangs.splice(i,1); } }
+}
+function teamText(){
+  const lines=[];
+  const fl=mates.filter(m=>m.state==='follow'&&!m.down).length; if(fl) lines.push(`Alpha ×${fl} with you`);
+  groups.forEach(g=>{ const n=g.members.filter(m=>!m.down).length; if(!n||g.phase==='done') return;
+    const where=g.phase==='stacked'?(g.staged?'in position':`stacked at the ${g.info.door.name}`):g.phase==='moving'?'moving to breach':g.phase==='breaching'?'breaching':g.phase==='clearing'?`clearing to the ${g.to[0]||'room'}`:`holding the ${g.to[0]||'room'}`;
+    lines.push(`${g.name} ×${n} ${where}`); });
+  if(mates.some(m=>m.state==='overwatch'&&!m.down)) lines.push('Marksman on overwatch');
+  const po=mates.filter(m=>m.state==='post'&&!m.down).length; if(po) lines.push(`Perimeter ×${po}, weapons tight`);
+  const dn=mates.filter(m=>m.down).length; if(dn) lines.push(`${dn} wounded`);
+  if(groups.some(g=>g.phase==='stacked')) lines.push('X send teams · Z regroup');
+  else if(mates.some(m=>!m.down&&['hold','clearing','overwatch','post'].includes(m.state))) lines.push('Z regroup on you');
+  return lines.join('\n');
+}
+function renderPlans(){
+  const m=LEVELS[save.selected], box=$('plans'); box.innerHTML='';
+  const plans=m.plans&&m.plans.length?m.plans:[{name:'One stack',desc:'Everyone follows you.',follow:4}];
+  const cur=clamp(save.plans[m.id]||0,0,plans.length-1);
+  plans.forEach((pl,i)=>{ const b=el('button','plan'); b.type='button'; b.setAttribute('aria-pressed',String(i===cur));
+    const parts=[`You + ${pl.follow||0}`].concat((pl.els||[]).map(e=>`${e.name} ${e.n}`)); if(pl.over) parts.push(`Marksman ${pl.over.length}`); if(pl.posts) parts.push(`Perimeter ${pl.posts.length}`);
+    b.appendChild(el('span','pn',pl.name)); b.appendChild(el('span','pd',pl.desc)); b.appendChild(el('span','pt',parts.join(' · ')));
+    b.addEventListener('click',()=>{ save.plans[m.id]=i; writeSave(); renderPlans(); });
+    box.appendChild(b); });
 }
 
 /* ================= OBJECTIVES / HUD ================= */
@@ -1606,6 +1845,7 @@ function updateHud(dt){
   $('clock').textContent=fmtT(missionT);
   $('cpInfo').textContent=lastCpLabel?`Saved ${fmtT(lastCp)}`:'Not saved yet';
   const ot=objectiveText(); if($('objText').textContent!==ot) $('objText').textContent=ot;
+  const tt=teamText(); if($('teamText').textContent!==tt) $('teamText').textContent=tt;
   const hd=((360-(P.yaw*180/Math.PI))%360+360)%360; const dirs=['N','NE','E','SE','S','SW','W','NW']; $('compass').textContent=dirs[Math.round(hd/45)%8]+' · '+String(Math.round(hd)%360).padStart(3,'0');
   $('hpVal').textContent=Math.ceil(P.health); const hb=$('hpBar'); hb.style.width=P.health+'%'; hb.classList.toggle('low',P.health<35);
   if(platesEl.dataset.n!==String(P.plates)){ platesEl.dataset.n=P.plates; platesEl.innerHTML=''; for(let i=0;i<5;i++){ const e=document.createElement('i'); if(i>=P.plates) e.className='gone'; platesEl.appendChild(e); } }
@@ -1691,6 +1931,7 @@ function frame(now){
     missionT+=dt;
     updatePlayer(dt);
     for(const ch of chars) updateChar(ch,dt);
+    updateTeam(dt);
     updateBangs(dt);
     updateCheckpoint();
     updateHud(dt);
@@ -1711,7 +1952,7 @@ function frame(now){
 // Progress lives in this browser only: unlocked levels, best grades, loadout and one checkpoint per level.
 const SAVE_KEY='breachpoint.save.v2', BUILD='m3';
 let save=null, storageOk=true;
-function blankSave(){ return {v:2,settings:{voice:true},loadout:{primary:'carbine',secondary:'pistol'},selected:0,unlocked:0,best:{},history:[],checkpoints:{}}; }
+function blankSave(){ return {v:2,settings:{voice:true},loadout:{primary:'carbine',secondary:'pistol'},selected:0,unlocked:0,best:{},plans:{},history:[],checkpoints:{}}; }
 function loadSave(){
   save=blankSave();
   try{
@@ -1723,6 +1964,7 @@ function loadSave(){
     if(d.loadout&&WEAP[d.loadout.primary]&&WEAP[d.loadout.secondary]) save.loadout=d.loadout;
     save.unlocked=clamp(Number.isInteger(d.unlocked)?d.unlocked:0,0,LEVELS.length-1);
     if(d.best&&typeof d.best==='object') save.best=d.best;
+    if(d.plans&&typeof d.plans==='object') save.plans=d.plans;
     save.selected=clamp(Number.isInteger(d.selected)?d.selected:save.unlocked,0,save.unlocked);
     if(d.checkpoints) for(const id in d.checkpoints){ const c=d.checkpoints[id]; if(c&&c.build===BUILD) save.checkpoints[id]=c; }
   }catch(e){ storageOk=false; }
@@ -1737,7 +1979,7 @@ function safeToSave(){
   if(state!=='play'||!P.alive||ending) return false;
   if(missionT-lastDanger<4||bangs.length||P.hold) return false;
   if(P.W[P.weapon].reloading>0) return false;
-  return !chars.some(c=>c.alive&&c.kind==='hostile'&&c.state==='engage'&&c.sees);
+  return !chars.some(c=>c.alive&&c.kind==='hostile'&&c.state==='engage'&&c.seesAny);
 }
 function takeCheckpoint(label){ save.checkpoints[M.id]=snapshot(label); lastCp=missionT; lastCpLabel=label; cpPending=null; return writeSave(); }
 function updateCheckpoint(){
@@ -1755,7 +1997,8 @@ function snapshot(label){
     chars:chars.map(c=>({id:c.id,kind:c.kind,ai:c.ai,wasSubject:c.wasSubject,x:c.x,z:c.z,a:c.a,hp:c.hp,alive:c.alive,state:c.state,armedVisible:c.armedVisible,spot:c.spot,pi:c.pi,said:c.said,logged:c.logged,hits:c.hits,seen:!!c.seen,fakeT:c.fakeT,last:c.last||null,look:c.look||null,lost:c.lost,wait:c.wait,exitDelay:c.exitDelay||0,dropped:!!c.dropped})),
     doors:[...doorMap.values()].map(d=>({c:d.c,r:d.r,open:d.open,locked:d.locked,target:d.target,breached:d.breached,tilt:d.tilt})),
     decals:decals.map(m=>m.userData.d),
-    stats:clone(stats),log:clone(logList)};
+    stats:clone(stats),log:clone(logList),
+    plan:planIndex,goGiven,groups:groups.map(g=>({phase:g.phase,banged:g.banged})),mates:mates.map(m=>({id:m.id,x:m.x,z:m.z,a:m.a,hp:m.hp,down:m.down,state:m.state,wp:m.wp}))};
 }
 function poseFor(ch){
   if(ch.kind==='hostage') return ch.state==='tied'?'tied':'stand';
@@ -1790,13 +2033,19 @@ function applySnapshot(src){
     if(ch.state==='exit'){ ch.state='leaving'; ch.exitDelay=0.5; }
     place(ch);
   }
+  goGiven=!!s.goGiven;
+  (s.groups||[]).forEach((sg,i)=>{ const g=groups[i]; if(!g) return; g.phase=(sg.phase==='moving'||sg.phase==='breaching')?'clearing':sg.phase; g.banged=sg.banged; });
+  (s.mates||[]).forEach(sm=>{ const m=mates.find(x=>x.id===sm.id); if(!m) return; Object.assign(m,{x:sm.x,z:sm.z,a:sm.a,hp:sm.hp,down:sm.down,state:sm.state,wp:sm.wp}); m.path=[]; m.pose='';
+    if(m.down) setPose(m,'downed');
+    else if(['clearing','breacher','waiting'].includes(m.state)){ if(m.wp){ m.state='clearing'; m.path=pathTo(m.x,m.z,m.wp.x,m.wp.z); } else m.state='hold'; }
+    place(m); });
   lastCp=missionT; lastCpLabel=s.label; lastDanger=missionT; cpPending=null;
   logEv(`Resumed from checkpoint: ${s.label.toLowerCase()}.`);
 }
 
 /* ================= FLOW ================= */
-function resetMission(loadout){
-  resetDoors(); spawnAll(); resetPlayer(loadout); resetStats();
+function resetMission(loadout,pi){
+  resetDoors(); spawnAll(); resetPlayer(loadout); spawnTeam(pi); if(plan.start){ P.x=plan.start.x; P.z=plan.start.z; P.yaw=plan.start.yaw||0; } resetStats();
   missionT=0; alarm=false; alarmT=-1; talk=0; lastTalkT=-99; escalated=false; ending=null; bangs.forEach(b=>scene.remove(b.m)); bangs=[];
   lastDanger=0; lastCp=0; lastCpLabel=''; cpPending=null; enteredHouse=false; usedCp=false;
   spot.intensity=0; canvas.classList.remove('nv'); $('nvRing').hidden=true; $('scope').hidden=true;
@@ -1809,7 +2058,7 @@ function startMission(cp){
   audioInit(); voiceOn=$('voiceChk').checked;
   try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){}
   loadMission(save.selected);
-  resetMission(cp?{primary:cp.P.slots[0],secondary:cp.P.slots[1]}:null);
+  resetMission(cp?{primary:cp.P.slots[0],secondary:cp.P.slots[1]}:null,cp?cp.plan:(save.plans[M.id]||0));
   if(cp){ applySnapshot(cp); usedCp=true; }
   else { delete save.checkpoints[M.id]; writeSave(); }
   state='play'; $('brief').hidden=true; $('aar').hidden=true; $('pause').hidden=true; $('hud').hidden=false;
@@ -1869,7 +2118,7 @@ function renderBrief(){
   $('bWhen').textContent=m.when; $('bName').textContent=m.name; $('bText').textContent=m.brief;
   $('bUnit').textContent=m.unit; $('bGoal').textContent=m.goal;
   const best=save.best[m.id]; $('bBest').textContent=best?`${best.grade} · ${fmtT(best.time)}`:'None yet';
-  renderPicks('pickPrimary',PRIMARIES,'primary'); renderPicks('pickSecondary',SIDEARMS,'secondary');
+  renderPicks('pickPrimary',PRIMARIES,'primary'); renderPicks('pickSecondary',SIDEARMS,'secondary'); renderPlans();
   const cp=save.checkpoints[m.id], cb=$('continueBtn');
   cb.hidden=!cp; if(cp) cb.textContent=`Continue · ${cp.label} · ${fmtT(cp.missionT)}`;
   const sb=$('startBtn'); disarm(sb,cp?'Start over':'Start'); sb.classList.toggle('ghost',!!cp);
@@ -1918,7 +2167,7 @@ function finish(outcome){
   let score=100;
   score-=stats.unjust*30; score-=stats.civKilled*30; score-=stats.captivesLost*25; score+=stats.detained*4; if(stats.fakerCaught) score+=4;
   score-=Math.max(0,stats.dmg-20)*0.25; score-=Math.max(0,stats.rounds-60)*0.15; if(missionT<M.par) score+=4;
-  if(escalated) score-=25; if(success&&stats.rounds===0) score+=5;
+  if(escalated) score-=25; score-=stats.matesDown*8; if(success&&stats.rounds===0) score+=5;
   score=clamp(Math.round(score),0,100);
   let letter=score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F';
   if(success&&stats.captivesLost>0&&'AB'.includes(letter)) letter='C';
@@ -1927,10 +2176,11 @@ function finish(outcome){
   const winText={clear:g.captives.length?`Secured · ${g.safe} of ${g.captives.length} hostages safe`:'Secured',rescue:g.hostages.length>1?'Everyone rescued':'Rescued alive',surrender:'Everyone came out alive'}[M.type];
   const OUT={success:winText,kia:'Killed in action',hostage:'A hostage was killed',tragic:'People died at the cabin'};
   $('aOutcome').textContent=OUT[outcome];
-  const rows=[['Time',fmtT(missionT)],['Rounds fired',stats.rounds],['Arrested / killed',`${stats.detained} / ${stats.kills}`],['Unjustified hits',stats.unjust],['Hostages lost',stats.captivesLost],['Damage taken',Math.round(stats.dmg)]];
+  const rows=[['Time',fmtT(missionT)],['Plan',plan.name],['Your rounds fired',stats.rounds],['Team arrests / kills',`${stats.detained} / ${stats.kills}`],['Unjustified hits',stats.unjust],['Hostages lost',stats.captivesLost],['Operators wounded',stats.matesDown],['Damage taken',Math.round(stats.dmg)]];
   $('aSum').innerHTML='';
-  rows.forEach(([l,v])=>{ if(l==='Hostages lost'&&!g.captives.length) return; const tr=el('tr',((l==='Unjustified hits'||l==='Hostages lost')&&v>0)?'neg':''); tr.appendChild(el('td','',l)); tr.appendChild(el('td','',String(v))); $('aSum').appendChild(tr); });
+  rows.forEach(([l,v])=>{ if(l==='Hostages lost'&&!g.captives.length) return; const tr=el('tr',((l==='Unjustified hits'||l==='Hostages lost'||l==='Operators wounded')&&v>0)?'neg':''); tr.appendChild(el('td','',l)); tr.appendChild(el('td','',String(v))); $('aSum').appendChild(tr); });
   const tips=[];
+  if(stats.captivesLost>0) tips.push('A gunman can\'t execute a hostage while an operator has eyes on him. Pick a plan that sends a team straight to the hostages, and press X so every team breaches at once.');
   if(stats.unjust>0) tips.push('Hold fire until you see a weapon. Shout first; most people will show you what they are.');
   if(!stats.fakerCaught&&chars.some(c=>c.ai==='faker'&&c.alive&&c.state!=='restrained')) tips.push('One of them raises his hands but keeps a pistol. Watch him until he\'s cuffed.');
   if(!success||stats.dmg>50||stats.captivesLost>0||escalated) tips.push(...M.tips);
