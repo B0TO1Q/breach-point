@@ -1,0 +1,14 @@
+{
+  "name": "breach-point",
+  "private": true,
+  "description": "Browser tactical shooter about CQB, breaching and the use of force.",
+  "scripts": {
+    "pretest": "node tests/build-hook.js",
+    "test": "node tests/run.js",
+    "csp": "python3 tools/update-csp.py"
+  },
+  "devDependencies": {
+    "jsdom": "22.1.0",
+    "three": "0.128.0"
+  }
+}

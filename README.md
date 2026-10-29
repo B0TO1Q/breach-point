@@ -40,17 +40,19 @@ The levels are simplified to one floor and a handful of people. Real people appe
 You lead a five-man team: you plus four AI operators.
 
 - **Plans:** before each level, pick how the team goes in: one stack behind you, a second team at another door, simultaneous multi-door breaches, tunnels, overwatch or a perimeter. Each plan card shows who goes where.
-- **The go signal:** teams stack at their doors and wait. Press **X** and every team breaches at once. If the team is spotted or shooting starts, the stacks go in on their own. Press **Z** to call everyone back to you.
-- **How operators fight:** they stay quiet until the team is compromised, give commands before firing, shoot only armed threats, cuff people who surrender, and shotgun any locked door in their way. They can be wounded.
-- **Keeping hostages alive:** after an alarm, gunmen near the hostages start killing them, but a gunman can't execute anyone while an operator has eyes on him. Plans that send a team straight to the hostage rooms, launched together with X, are how you get everyone out.
-- **Friendly fire** counts as an unjustified hit.
+- **Getting into position:** teams start with you and walk to their doors, crouched and quiet. Teams coming in through a tunnel or on ropes start in place. Operators make noise like you do, so a careless approach can be heard.
+- **The go signal:** press **X** and every team breaches at the same moment, as soon as the last team is in position. If the team is spotted or shooting starts, the stacks go in on their own. Press **Z** to call everyone back to you.
+- **How operators fight:** they stay quiet until the team is compromised, give commands before firing, shoot only armed threats, cuff people who surrender, and shotgun any locked door in their way. They won't fire with a teammate, you or a hostage in the line; they step sideways for an angle instead. They can be wounded.
+- **Keeping hostages alive:** after an alarm, gunmen near the hostages start turning on them. A gunman who is stunned, under fire or already dead can't. Being seen doesn't stop him. Flashbangs, speed and teams hitting the hostage rooms at the same moment are how you get everyone out.
+- **Crossfire:** every round travels a real line. Misses keep going and can hit a hostage, a teammate or you. Your own stray rounds are unjustified hits; your team's are scored as team stray hits.
 
 ## Features
 
 - **Breaching:** pick, kick or shotgun-breach doors; deadbolts and reinforced doors behave differently.
-- **Enemy AI:** patrols, investigations, hold positions, fake surrenders, and hostage executions after an alarm.
+- **Enemy AI:** patrols, investigations, hold positions, fake surrenders and hostage executions after an alarm. Gunmen carry real magazines and have to reload, and they duck and shoot worse under suppressing fire.
+- **Bodies take up space:** nobody walks through anyone. Teammates on the move squeeze past each other.
 - **Use of force:** every shot is judged justified or not; shouting commands gets some suspects to surrender.
-- **Loadout:** choose a primary (CQB carbine, compact SMG, combat shotgun or scoped marksman rifle) and a sidearm before each level.
+- **Loadout:** choose a primary (rifle, SMG, shotgun or scoped rifle) and a sidearm before each level. Each level carries the weapons that unit used at the time, from the Kpist m/45 in 1973 to the HK416 in 2012. Red dots appear only from 2000.
 - **Saved progress:** unlocked levels, best grade and time per level, and your loadout are kept between visits.
 - **Checkpoints and retry:** saved at milestones and every 45 seconds when nobody is shooting at you. Pause with Esc or P to retry from a checkpoint, restart or save and quit.
 
@@ -81,13 +83,28 @@ You lead a five-man team: you plus four AI operators.
 - **Content Security Policy:** the page may only run its own inline game script (pinned by hash) and Three.js from cdnjs, and load Google Fonts. It can't make network requests, open frames or submit forms.
 - **No data collected:** no cookies, analytics or network calls. Saved progress is stored only in your own browser (`localStorage`, key `breachpoint.save.v2`) and never leaves your device. Clearing site data or using "Reset progress" on the level screen erases it.
 
-When you edit the inline `<script>` in `index.html`, update its `sha256-…` hash in the Content-Security-Policy meta tag, or the browser will block the game.
+When you edit the inline `<script>` in `index.html`, run `npm run csp` (or `python3 tools/update-csp.py`) to update its `sha256-…` hash in the Content-Security-Policy meta tag. Otherwise the browser blocks the game.
+
+## Tests
+
+```
+npm install
+npm test
+```
+
+The tests run the game headless in Node (jsdom) and check:
+
+- every map and plan is valid;
+- a scripted player can finish all ten levels in order;
+- every plan runs without errors;
+- checkpoints save and restore the player, the hostages and the team.
 
 ## Roadmap
 
 1. Multi-floor buildings with stairs (the embassy, the residence)
-2. Era-appropriate weapons per level
-3. More squad orders: hold a room, follow a different leader, cover a hallway
-4. More levels and a contractor mode
+2. More squad orders: hold a room, follow a different leader, cover a hallway
+3. Enemy grenades and barricades
+4. A map and objective markers; touch controls
+5. More levels and a contractor mode
 
 Design doc: https://claude.ai/artifact/Daj7Z1uaVygSQjUw2p4R6d
