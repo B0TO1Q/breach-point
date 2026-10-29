@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdnjs.cloudflare.com 'sha256-cqauMMzwGKJoCQpnJBt4Ww1rmYYuWXz0YBplpPFF7eY='; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdnjs.cloudflare.com 'sha256-Webbc3XwZ0RXSkd6K+A7xHjpWrS7iaRr7PWpU+fzh48='; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; worker-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Breach Point</title>
@@ -1399,10 +1399,15 @@ function detonate(p){
   SFX.bang(p.x,p.z); danger(); muzzleLight.position.copy(p); muzzleLight.intensity=8; muzzleLight.distance=12;
   pushNoise(p.x,p.z,45,'bang',true);
   let stunned=0;
-  for(const ch of chars){ if(!ch.alive) continue; const d=Math.hypot(ch.x-p.x,ch.z-p.z); if(d<7&&los(p.x,p.z,ch.x,ch.z)){ ch.stun=Math.max(ch.stun,5-d*0.4); stunned++; } }
+  let blinded=0;
+  for(const ch of chars){ if(!ch.alive) continue; const d=Math.hypot(ch.x-p.x,ch.z-p.z); if(d<7&&los(p.x,p.z,ch.x,ch.z)){ ch.stun=Math.max(ch.stun,5-d*0.4); stunned++;
+    // Anyone close who was looking toward the bang is left half-blind for a long time afterwards.
+    const face=Math.abs(angDiff(Math.atan2(p.x-ch.x,p.z-ch.z),ch.a))<1.3;
+    const b=d<4.5?(face?30:14)*(1-d/9):(face?10:0);
+    if(b>2&&ch.kind==='hostile'){ ch.blindT=Math.max(ch.blindT||0,b); ch.blindMax=Math.max(ch.blindMax||0,ch.blindT); blinded++; } } }
   const d=Math.hypot(P.x-p.x,P.z-p.z);
   if(d<9&&los(p.x,p.z,P.x,P.z)){ const to=Math.atan2(-(p.x-P.x),-(p.z-P.z)); const face=Math.abs(angDiff(to,P.yaw)); const k=(1-d/9)*(face<1.2?1:0.35); if(k>0.05){ P.blind=Math.max(P.blind,2.6*k+0.3); SFX.ring(); } }
-  logEv(stunned?`Flashbang in the ${roomOf(p.x,p.z)} stunned ${stunned} ${stunned===1?'person':'people'}.`:`Flashbang in the ${roomOf(p.x,p.z)} caught no one.`);
+  logEv(stunned?`Flashbang in the ${roomOf(p.x,p.z)} stunned ${stunned} ${stunned===1?'person':'people'}${blinded?`, ${blinded} left half-blind`:''}.`:`Flashbang in the ${roomOf(p.x,p.z)} caught no one.`);
 }
 function pushNoise(x,z,r,kind,fromPlayer){
   if(fromPlayer) P.noise=Math.max(P.noise,r);
@@ -1435,9 +1440,12 @@ function engage(ch,react,src){ if(ch.state==='engage') return; src=src||P; ch.st
 
 /* ================= AI ================= */
 function darkOutside(){ return ENV[M.light].dark&&!insideHouse(P.x,P.z)&&!P.light; }
+// Sight comes back slowly: about 2.5 m while badly flashed, opening up as the blindness wears off.
+function blindRange(ch){ const k=ch.blindT/Math.max(ch.blindMax||1,1); return k>0.5?2.5:2.5+(1-k*2)*14; }
 function canSee(ch){
   const dx=P.x-ch.x,dz=P.z-ch.z,d=Math.hypot(dx,dz);
-  const range = darkOutside()?15 : insideHouse(P.x,P.z)||P.light ? 22 : 30;
+  let range = darkOutside()?15 : insideHouse(P.x,P.z)||P.light ? 22 : 30;
+  if(ch.blindT>0) range=Math.min(range,blindRange(ch));
   if(d>range) return false;
   const fov=(ch.state==='engage'||ch.state==='alert'||ch.state==='investigate')?2.5:1.9;
   if(Math.abs(angDiff(Math.atan2(dx,dz),ch.a))>fov/2&&d>1.6) return false;
@@ -1536,6 +1544,7 @@ function enemyShoot(ch,t){
     p=0.6-d*0.022; if(P.moving) p-=0.1; if(P.sprinting) p-=0.12; if(P.crouch) p-=0.07; if(Math.abs(P.lean)>0.5) p-=0.12; p+=Math.min(ch.aimT,1.5)*0.1;
     if(darkOutside()) p-=0.1; aim=new V3(P.x,P.eye-0.35,P.z); }
   if(ch.suppT>0) p-=0.25;
+  if(ch.blindT>0) p-=0.35*Math.min(1,ch.blindT/Math.max(ch.blindMax||1,1)*2);
   p=clamp(p,0.05,0.82);
   const res=traceRound(ch,aim,p,0.9);
   tracer(res.o,res.point,0xffb070); danger();
@@ -1545,7 +1554,7 @@ function enemyShoot(ch,t){
 }
 // After the alarm, gunmen near captives may turn on them. Only a stun, suppressing fire or killing him first stops it.
 function tryExecute(ch,dt){
-  if(!M.exec||alarmT<0||missionT-alarmT<M.exec||!ch.armedVisible||ch.suppT>0||ch.reloadT>0) return false;
+  if(!M.exec||alarmT<0||missionT-alarmT<M.exec||!ch.armedVisible||ch.suppT>0||ch.reloadT>0||ch.blindT>4) return false;
   ch.execCd-=dt; if(ch.execCd>0) return false;
   let best=null,bd=7;
   for(const c of chars){ if(!c.alive) continue; if(!((c.kind==='civilian'&&c.captive)||(c.kind==='hostage'&&c.state==='tied'))) continue; const d=Math.hypot(c.x-ch.x,c.z-ch.z); if(d<bd&&los(ch.x,ch.z,c.x,c.z)){ bd=d; best=c; } }
@@ -1584,6 +1593,7 @@ function hostileAI(ch,dt){
     if(ch.fakeT<=0){ ch.armedVisible=true; ch.state='spring'; setPose(ch,'aim'); engage(ch,0.18); ch.state='engage'; say(ch,'Now!'); logEv(`The ${ch.label.toLowerCase()} in the ${roomOf(ch.x,ch.z)} with raised hands drew a concealed pistol.`); }
     return; }
   if(ch.reloadT>0) ch.reloadT-=dt; if(ch.suppT>0) ch.suppT-=dt;
+  if(ch.blindT>0){ ch.blindT-=dt; if(ch.blindT<=0){ ch.blindMax=0; } else if(!ch.said.blind&&ch.state==='engage'){ ch.said.blind=1; say(ch,['I can\'t see!','My eyes!','Where are they?!'][Math.floor(rand()*3)]); } }
   const tv=visibleTarget(ch);
   const sees=!!tv; ch.seesAny=sees; ch.sees=sees&&tv.t===P;
   if(ch.state!=='engage'){ if(sees){ ch.spot+=spotRate(ch,tv.d,tv.t)*dt; if(ch.spot>=1) engage(ch,(ch.state==='idle'||ch.state==='patrol')?0.75+rand()*0.45:(ch.ai==='complier'?0.9:0.32+rand()*0.3),tv.t); } else ch.spot=Math.max(0,ch.spot-dt*0.25); }
@@ -1734,7 +1744,7 @@ function regroup(){
 }
 function watched(ch){ return playerWatching(ch)||mates.some(m=>!m.down&&Math.hypot(m.x-ch.x,m.z-ch.z)<7&&los(m.x,m.z,ch.x,ch.z)); }
 function canSeeMate(ch,m,d){
-  const out=!insideHouse(m.x,m.z), range=out?(ENV[M.light].dark?15:30):22; if(d>range) return false;
+  const out=!insideHouse(m.x,m.z); let range=out?(ENV[M.light].dark?15:30):22; if(ch.blindT>0) range=Math.min(range,blindRange(ch)); if(d>range) return false;
   const fov=(ch.state==='engage'||ch.state==='alert'||ch.state==='investigate')?2.5:1.9;
   if(Math.abs(angDiff(Math.atan2(m.x-ch.x,m.z-ch.z),ch.a))>fov/2&&d>1.6) return false;
   return los(ch.x,ch.z,m.x,m.z);
@@ -1749,6 +1759,8 @@ function commandHostile(ch,src){
   if(ch.kind!=='hostile'||!ch.alive) return;
   if(ch.ai==='complier'&&!['surrendered','restrained'].includes(ch.state)){ ch.state='surrendered'; ch.wait=1; if(ch.armedVisible){ dropWeapon(ch); ch.armedVisible=false; } setPose(ch,'handsUp'); say(ch,'Okay! Okay! Don\'t shoot!'); stats.shoutsWorked++; logEv(`${ch.wasSubject?'An occupant':'A '+ch.label.toLowerCase()} in the ${roomOf(ch.x,ch.z)} dropped his weapon and surrendered after commands.`,'good'); }
   else if(ch.ai==='faker'&&!['fake','restrained'].includes(ch.state)){ ch.state='fake'; ch.armedVisible=false; ch.fakeT=3.5+rand()*2.5; ch.wait=1; setPose(ch,'handsUp'); say(ch,'Alright... alright.'); }
+  // A man who can't see and hears commands from close by often gives up.
+  else if(ch.blindT>3&&ch.ai!=='faker'&&!['surrendered','restrained'].includes(ch.state)&&rand()<0.55){ ch.state='surrendered'; ch.wait=1; if(ch.armedVisible){ dropWeapon(ch); ch.armedVisible=false; } setPose(ch,'handsUp'); say(ch,'Don\'t shoot! I can\'t see! I give up!'); stats.shoutsWorked++; logEv(`A blinded ${ch.label.toLowerCase()} in the ${roomOf(ch.x,ch.z)} dropped his weapon and gave up.`,'good'); }
   else if(['idle','patrol','investigate','alert'].includes(ch.state)){ engage(ch,0.45,src); }
 }
 function mateThreat(m){

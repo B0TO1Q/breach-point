@@ -50,6 +50,7 @@ You lead a five-man team: you plus four AI operators.
 
 - **Breaching:** pick, kick or shotgun-breach doors; deadbolts and reinforced doors behave differently.
 - **Enemy AI:** patrols, investigations, hold positions, fake surrenders and hostage executions after an alarm. Gunmen carry real magazines and have to reload, and they duck and shoot worse under suppressing fire.
+- **Flashbangs:** a few seconds of full stun for everyone in the room. Anyone close who was looking toward it stays half-blind for up to 30 seconds: he sees only a couple of metres, shoots badly, can't pick out hostages, and often gives up when you shout.
 - **Bodies take up space:** nobody walks through anyone. Teammates on the move squeeze past each other.
 - **Use of force:** every shot is judged justified or not; shouting commands gets some suspects to surrender.
 - **Loadout:** choose a primary (rifle, SMG, shotgun or scoped rifle) and a sidearm before each level. Each level carries the weapons that unit used at the time, from the Kpist m/45 in 1973 to the HK416 in 2012. Red dots appear only from 2000.
